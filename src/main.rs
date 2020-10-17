@@ -1,6 +1,6 @@
 extern crate pancurses;
 
-use pancurses::{endwin, initscr, noecho, Input, Window};
+use pancurses::{cbreak, endwin, initscr, noecho, Input, Window};
 
 fn main() {
   // println!("Starting Rustrix");
@@ -19,7 +19,7 @@ fn main() {
     let user_input = ui.wait_for_user_input();
     match user_input {
       UserInput::UserWantsToQuit => break,
-      UserInput::NoInput => (),
+      input => game.handle_input(&input, &mut board),
     }
 
     game.step(&mut board);
@@ -36,6 +36,12 @@ const FULL_UI_HEIGHT: i32 = 26;
 
 enum UserInput {
   UserWantsToQuit,
+  MoveLeft,
+  MoveRight,
+  MoveDown,
+  DropDown,
+  RotateLeft,
+  RotateRight,
   NoInput,
 }
 
@@ -106,10 +112,11 @@ struct UI {
 impl UI {
   fn new() -> UI {
     let window = initscr();
-    window.refresh();
-    window.keypad(false);
+    window.clear();
     window.timeout(30);
+    window.keypad(true);
     noecho();
+    cbreak();
     let board_win = match window.subwin(BOARD_DIM_X as i32, BOARD_DIM_Y as i32, 0, 0) {
       Ok(win) => win,
       Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
@@ -142,6 +149,13 @@ impl UI {
     let ch = self.window.getch();
     match ch {
       Some(Input::Character('q')) => UserInput::UserWantsToQuit,
+      Some(Input::Unknown(27)) => UserInput::UserWantsToQuit, // 27 is ESC key
+      Some(Input::KeyLeft) => UserInput::RotateLeft,
+      Some(Input::KeyRight) => UserInput::RotateRight,
+      Some(Input::Character('a')) => UserInput::MoveLeft,
+      Some(Input::Character('d')) => UserInput::MoveRight,
+      Some(Input::Character('s')) => UserInput::MoveDown,
+      Some(Input::Character('w')) => UserInput::DropDown,
       _ => UserInput::NoInput,
     }
   }
@@ -176,13 +190,26 @@ impl Game {
 
   fn step(&self, board: &mut Board) {
     if board.time_to_drop == 0 {
-      board.block.move_down();
+      board.block.move_block(0, 1);
       board.time_to_drop = board.drop_interval;
     } else {
       board.time_to_drop = board.time_to_drop - 1;
     }
     board.time = board.time + 1;
   }
+
+  fn handle_input(&self, input: &UserInput, board: &mut Board) {
+    match input {
+      UserInput::MoveLeft => board.block.move_block(-1, 0),
+      UserInput::MoveRight => board.block.move_block(1, 0),
+      UserInput::MoveDown => board.block.move_block(0, 1),
+      UserInput::RotateLeft => board.block.rotate_block(-1),
+      UserInput::RotateRight => board.block.rotate_block(1),
+      _ => (),
+    }
+  }
+
+  // fn rotate_left
 }
 
 // -----------------------------------------------------------------------------
@@ -202,8 +229,30 @@ impl Block {
     };
   }
 
-  fn move_down(&mut self) {
-    self.b_pos = (self.b_pos.0, self.b_pos.1 + 1);
+  fn move_block(&mut self, x: i32, y: i32) {
+    self.b_pos = (self.b_pos.0 + x, self.b_pos.1 + y);
+  }
+
+  fn rotate_block(&mut self, r: i32) {
+    match r {
+      1 => {
+        self.b_rot = match self.b_rot {
+          BlockRot::Rot0 => BlockRot::Rot1,
+          BlockRot::Rot1 => BlockRot::Rot2,
+          BlockRot::Rot2 => BlockRot::Rot3,
+          BlockRot::Rot3 => BlockRot::Rot0,
+        }
+      }
+      -1 => {
+        self.b_rot = match self.b_rot {
+          BlockRot::Rot0 => BlockRot::Rot3,
+          BlockRot::Rot1 => BlockRot::Rot0,
+          BlockRot::Rot2 => BlockRot::Rot1,
+          BlockRot::Rot3 => BlockRot::Rot2,
+        }
+      }
+      _ => panic!("rotate_block must be called w/ 1 or -1"),
+    }
   }
 
   fn probe(&self, board_x: i32, board_y: i32) -> bool {
