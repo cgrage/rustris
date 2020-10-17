@@ -46,7 +46,6 @@ enum CellVal {
   ActivePiece,
 }
 
-#[derive(Copy, Clone)]
 enum BlockType {
   I,
   O,
@@ -57,29 +56,29 @@ enum BlockType {
   Z,
 }
 
-impl BlockType {
-  fn rand() -> BlockType {
-    return BlockType::I;
-  }
-
-  fn start_pos(&self) -> (i32, i32) {
-    return (0, 0);
-  }
+enum BlockRot {
+  Rot0,
+  Rot1,
+  Rot2,
+  Rot3,
 }
 
 struct Board {
   cells: [[CellVal; BOARD_DIM_X]; BOARD_DIM_Y],
-  block: BlockType,
-  block_pos: (i32, i32),
+  block: Block,
+  time: u32,
+  time_to_drop: u32,
+  drop_interval: u32,
 }
 
 impl Board {
   fn new() -> Board {
-    let start_block = BlockType::rand();
     return Board {
       cells: [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y],
-      block: start_block,
-      block_pos: start_block.start_pos(),
+      block: Block::rand(),
+      time: 0,
+      time_to_drop: 10,
+      drop_interval: 10,
     };
   }
 
@@ -92,14 +91,10 @@ impl Board {
   }
 
   fn at(&self, x: i32, y: i32) -> &CellVal {
-    if (x, y) == self.block_pos {
+    if self.block.probe(x, y) {
       return &CellVal::ActivePiece;
     }
     return &self.cells[y as usize][x as usize];
-  }
-
-  fn move_block_down(&mut self) {
-    self.block_pos = (self.block_pos.0, self.block_pos.1 + 1);
   }
 }
 
@@ -180,6 +175,138 @@ impl Game {
   }
 
   fn step(&self, board: &mut Board) {
-    board.move_block_down();
+    if board.time_to_drop == 0 {
+      board.block.move_down();
+      board.time_to_drop = board.drop_interval;
+    } else {
+      board.time_to_drop = board.time_to_drop - 1;
+    }
+    board.time = board.time + 1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+struct Block {
+  b_type: BlockType,
+  b_rot: BlockRot,
+  b_pos: (i32, i32),
+}
+
+impl Block {
+  fn rand() -> Block {
+    return Block {
+      b_type: BlockType::I,
+      b_rot: BlockRot::Rot0,
+      b_pos: (BOARD_DIM_X as i32 / 2, 0),
+    };
+  }
+
+  fn move_down(&mut self) {
+    self.b_pos = (self.b_pos.0, self.b_pos.1 + 1);
+  }
+
+  fn probe(&self, board_x: i32, board_y: i32) -> bool {
+    if self.b_pos.0 - board_x < 0 || self.b_pos.1 - board_y < 0 {
+      return false;
+    }
+
+    let x = (self.b_pos.0 - board_x) as usize;
+    let y = (self.b_pos.1 - board_y) as usize;
+
+    return match self.b_type {
+      BlockType::I | BlockType::O => {
+        x < 4 && y < 4 && Block::pattern_4x4(&self.b_type, &self.b_rot)[y][x] == 1
+      }
+      BlockType::T | BlockType::J | BlockType::L | BlockType::S | BlockType::Z => {
+        x < 3 && y < 3 && Block::pattern_3x3(&self.b_type, &self.b_rot)[y][x] == 1
+      }
+    };
+  }
+
+  fn pattern_4x4(b_type: &BlockType, b_rot: &BlockRot) -> [[i32; 4]; 4] {
+    return match b_type {
+      BlockType::I => match b_rot {
+        BlockRot::Rot0 => [
+          [0, 0, 0, 0], //
+          [1, 1, 1, 1],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+        ],
+        BlockRot::Rot1 => [
+          [0, 0, 1, 0], //
+          [0, 0, 1, 0],
+          [0, 0, 1, 0],
+          [0, 0, 1, 0],
+        ],
+        BlockRot::Rot2 => [
+          [0, 0, 0, 0], //
+          [0, 0, 0, 0],
+          [1, 1, 1, 1],
+          [0, 0, 0, 0],
+        ],
+        BlockRot::Rot3 => [
+          [0, 1, 0, 0], //
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+        ],
+      },
+      BlockType::O => [
+        [0, 0, 0, 0], //
+        [0, 1, 1, 0],
+        [0, 1, 1, 0],
+        [0, 0, 0, 0],
+      ],
+      _ => panic!("unknown 4x4 type"),
+    };
+  }
+
+  fn pattern_3x3(b_type: &BlockType, b_rot: &BlockRot) -> [[i32; 3]; 3] {
+    return match b_type {
+      BlockType::T => match b_rot {
+        BlockRot::Rot0 => [
+          [0, 1, 0], //
+          [1, 1, 1],
+          [0, 0, 0],
+        ],
+        BlockRot::Rot1 => [
+          [0, 1, 0], //
+          [0, 1, 1],
+          [0, 1, 0],
+        ],
+        BlockRot::Rot2 => [
+          [0, 0, 0], //
+          [1, 1, 1],
+          [0, 1, 0],
+        ],
+        BlockRot::Rot3 => [
+          [0, 1, 0], //
+          [1, 1, 0],
+          [0, 1, 0],
+        ],
+      },
+      BlockType::J => [
+        [0, 0, 0], //
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+      BlockType::L => [
+        [0, 0, 0], //
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+      BlockType::S => [
+        [0, 0, 0], //
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+      BlockType::Z => [
+        [0, 0, 0], //
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+      _ => panic!("unknown 3x3 type"),
+    };
   }
 }
