@@ -4,3 +4,4 @@ version = "0.0.1"
 
 [dependencies]
 pancurses = "0.16"
+rand = "0.7.3"

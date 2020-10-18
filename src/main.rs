@@ -1,6 +1,7 @@
 extern crate pancurses;
+extern crate rand;
 
-use pancurses::{cbreak, endwin, initscr, noecho, Input, Window};
+use rand::Rng;
 
 fn main() {
   // println!("Starting Rustrix");
@@ -23,7 +24,8 @@ fn main() {
     }
 
     game.step(&mut board);
-    ui.draw(&board);
+    ui.draw_background(&board);
+    ui.draw_foreground(&board);
   }
 
   ui.destroy();
@@ -31,8 +33,6 @@ fn main() {
 
 const BOARD_DIM_X: usize = 10;
 const BOARD_DIM_Y: usize = 20;
-const FULL_UI_WIDTH: i32 = 26;
-const FULL_UI_HEIGHT: i32 = 26;
 
 enum UserInput {
   UserWantsToQuit,
@@ -73,8 +73,8 @@ struct Board {
   cells: [[CellVal; BOARD_DIM_X]; BOARD_DIM_Y],
   block: Block,
   time: u32,
-  time_to_drop: u32,
-  drop_interval: u32,
+  time_to_step: u32,
+  step_interval: u32,
 }
 
 impl Board {
@@ -83,8 +83,8 @@ impl Board {
       cells: [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y],
       block: Block::rand(),
       time: 0,
-      time_to_drop: 10,
-      drop_interval: 10,
+      time_to_step: 10,
+      step_interval: 10,
     };
   }
 
@@ -97,79 +97,119 @@ impl Board {
   }
 
   fn at(&self, x: i32, y: i32) -> &CellVal {
-    if self.block.probe(x, y) {
+    if self.block.probe_is_filled(x, y) {
       return &CellVal::ActivePiece;
     }
     return &self.cells[y as usize][x as usize];
   }
+
+  fn move_block_vert(&mut self, amount : i32) {
+    self.block.move_block(amount, 0)
+  }
+
+  fn lower_block(&mut self) {
+    self.block.move_block(0, 1)
+  }
+
+  fn drop_block(&mut self) {
+    //
+  }
+
+  fn rotate_block(&mut self, amount : i32) {
+    self.block.rotate_block(amount);
+  }
 }
 
 struct UI {
-  window: Window,
-  board_win: Window,
+  global_win: pancurses::Window,
+  game_win: pancurses::Window,
+  board_win: pancurses::Window,
 }
 
 impl UI {
+  const BOARD_BORDER: i32 = 1;
+  const FULL_UI_WIDTH: i32 = 26;
+  const FULL_UI_HEIGHT: i32 = 26;
+
   fn new() -> UI {
-    let window = initscr();
-    window.clear();
-    window.timeout(30);
-    window.keypad(true);
-    noecho();
-    cbreak();
-    let board_win = match window.subwin(BOARD_DIM_X as i32, BOARD_DIM_Y as i32, 0, 0) {
+    let global_win = pancurses::initscr();
+    global_win.clear();
+    global_win.timeout(30);
+    global_win.keypad(true);
+    pancurses::noecho();
+    pancurses::cbreak();
+    pancurses::curs_set(0);
+
+    let game_win = match global_win.subwin(UI::FULL_UI_HEIGHT, UI::FULL_UI_WIDTH, 0, 0) {
       Ok(win) => win,
       Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
     };
+
+    let board_with = (BOARD_DIM_X * 2) as i32 + 2 * UI::BOARD_BORDER;
+    let board_height = BOARD_DIM_Y as i32 + 2 * UI::BOARD_BORDER;
+    let board_win = match game_win.subwin(board_height, board_with, 0, 0) {
+      Ok(win) => win,
+      Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
+    };
+    board_win.border('|', '|', '-', '-', '+', '+', '+', '+');
+
     return UI {
-      window: window,
+      global_win: global_win,
+      game_win: game_win,
       board_win: board_win,
     };
   }
 
   fn has_enough_space(&self) -> bool {
-    return self.window.get_max_x() >= FULL_UI_WIDTH && self.window.get_max_y() >= FULL_UI_HEIGHT;
+    return self.global_win.get_max_x() >= UI::FULL_UI_WIDTH
+      && self.global_win.get_max_y() >= UI::FULL_UI_HEIGHT;
   }
 
   fn space_error(&self) -> String {
     return format!(
       "Not enough space in terminal; need {}x{}, have {}x{}",
-      FULL_UI_WIDTH,
-      FULL_UI_HEIGHT,
-      self.window.get_max_x(),
-      self.window.get_max_y(),
+      UI::FULL_UI_WIDTH,
+      UI::FULL_UI_HEIGHT,
+      self.global_win.get_max_x(),
+      self.global_win.get_max_y(),
     );
   }
 
   fn destroy(&self) {
-    endwin();
+    pancurses::endwin();
   }
 
   fn wait_for_user_input(&self) -> UserInput {
-    let ch = self.window.getch();
+    let ch = self.global_win.getch();
     match ch {
-      Some(Input::Character('q')) => UserInput::UserWantsToQuit,
-      Some(Input::Unknown(27)) => UserInput::UserWantsToQuit, // 27 is ESC key
-      Some(Input::KeyLeft) => UserInput::RotateLeft,
-      Some(Input::KeyRight) => UserInput::RotateRight,
-      Some(Input::Character('a')) => UserInput::MoveLeft,
-      Some(Input::Character('d')) => UserInput::MoveRight,
-      Some(Input::Character('s')) => UserInput::MoveDown,
-      Some(Input::Character('w')) => UserInput::DropDown,
+      Some(pancurses::Input::Character('q')) => UserInput::UserWantsToQuit,
+      Some(pancurses::Input::Unknown(27)) => UserInput::UserWantsToQuit, // 27 is ESC key
+      Some(pancurses::Input::KeyLeft) => UserInput::RotateLeft,
+      Some(pancurses::Input::KeyRight) => UserInput::RotateRight,
+      Some(pancurses::Input::Character('a')) => UserInput::MoveLeft,
+      Some(pancurses::Input::Character('d')) => UserInput::MoveRight,
+      Some(pancurses::Input::Character('s')) => UserInput::MoveDown,
+      Some(pancurses::Input::Character('w')) => UserInput::DropDown,
       _ => UserInput::NoInput,
     }
   }
 
-  fn draw(&self, board: &Board) {
+  fn draw_background(&self, _board: &Board) {
+    self.game_win.touch();
+    //self.game_win.refresh();
+  }
+
+  fn draw_foreground(&self, board: &Board) {
+    let b = UI::BOARD_BORDER;
     for y in 0..board.height() {
       for x in 0..board.width() {
         let val = board.at(x, y);
-        self.board_win.mv(y, 2 * x);
+        self.board_win.mv(b + y, b + 2 * x);
         self.board_win.printw(self.cell_string(&val));
       }
     }
     self.board_win.touch();
-    self.board_win.refresh();
+    self.game_win.refresh();
   }
 
   fn cell_string(&self, val: &CellVal) -> &str {
@@ -189,27 +229,26 @@ impl Game {
   }
 
   fn step(&self, board: &mut Board) {
-    if board.time_to_drop == 0 {
+    if board.time_to_step == 0 {
       board.block.move_block(0, 1);
-      board.time_to_drop = board.drop_interval;
+      board.time_to_step = board.step_interval;
     } else {
-      board.time_to_drop = board.time_to_drop - 1;
+      board.time_to_step = board.time_to_step - 1;
     }
     board.time = board.time + 1;
   }
 
   fn handle_input(&self, input: &UserInput, board: &mut Board) {
     match input {
-      UserInput::MoveLeft => board.block.move_block(-1, 0),
-      UserInput::MoveRight => board.block.move_block(1, 0),
-      UserInput::MoveDown => board.block.move_block(0, 1),
-      UserInput::RotateLeft => board.block.rotate_block(-1),
-      UserInput::RotateRight => board.block.rotate_block(1),
+      UserInput::MoveLeft => board.move_block_vert(-1),
+      UserInput::MoveRight => board.move_block_vert(1),
+      UserInput::MoveDown => board.lower_block(),
+      UserInput::DropDown => board.drop_block(),
+      UserInput::RotateLeft => board.rotate_block(-1),
+      UserInput::RotateRight => board.rotate_block(1),
       _ => (),
-    }
+    };
   }
-
-  // fn rotate_left
 }
 
 // -----------------------------------------------------------------------------
@@ -223,9 +262,22 @@ struct Block {
 impl Block {
   fn rand() -> Block {
     return Block {
-      b_type: BlockType::I,
+      b_type: Block::rand_block_type(),
       b_rot: BlockRot::Rot0,
       b_pos: (BOARD_DIM_X as i32 / 2, 0),
+    };
+  }
+
+  fn rand_block_type() -> BlockType {
+    let mut rnd = rand::thread_rng();
+    return match rnd.gen_range(0, 7) {
+      0 => BlockType::I,
+      1 => BlockType::O,
+      2 => BlockType::T,
+      3 => BlockType::J,
+      4 => BlockType::L,
+      5 => BlockType::S,
+      _ => BlockType::Z,
     };
   }
 
@@ -255,24 +307,25 @@ impl Block {
     }
   }
 
-  fn probe(&self, board_x: i32, board_y: i32) -> bool {
-    if self.b_pos.0 - board_x < 0 || self.b_pos.1 - board_y < 0 {
+  fn probe_is_filled(&self, board_x: i32, board_y: i32) -> bool {
+    if board_x - self.b_pos.0 < 0 || board_y - self.b_pos.1 < 0 {
       return false;
     }
 
-    let x = (self.b_pos.0 - board_x) as usize;
-    let y = (self.b_pos.1 - board_y) as usize;
+    let dx = (board_x - self.b_pos.0) as usize;
+    let dy = (board_y - self.b_pos.1) as usize;
 
     return match self.b_type {
       BlockType::I | BlockType::O => {
-        x < 4 && y < 4 && Block::pattern_4x4(&self.b_type, &self.b_rot)[y][x] == 1
+        dx < 4 && dy < 4 && Block::pattern_4x4(&self.b_type, &self.b_rot)[dy][dx] == 1
       }
       BlockType::T | BlockType::J | BlockType::L | BlockType::S | BlockType::Z => {
-        x < 3 && y < 3 && Block::pattern_3x3(&self.b_type, &self.b_rot)[y][x] == 1
+        dx < 3 && dy < 3 && Block::pattern_3x3(&self.b_type, &self.b_rot)[dy][dx] == 1
       }
     };
   }
 
+  // from: https://strategywiki.org/wiki/Tetris/Rotation_systems
   fn pattern_4x4(b_type: &BlockType, b_rot: &BlockRot) -> [[i32; 4]; 4] {
     return match b_type {
       BlockType::I => match b_rot {
@@ -335,26 +388,94 @@ impl Block {
           [0, 1, 0],
         ],
       },
-      BlockType::J => [
-        [0, 0, 0], //
-        [0, 0, 0],
-        [0, 0, 0],
-      ],
-      BlockType::L => [
-        [0, 0, 0], //
-        [0, 0, 0],
-        [0, 0, 0],
-      ],
-      BlockType::S => [
-        [0, 0, 0], //
-        [0, 0, 0],
-        [0, 0, 0],
-      ],
-      BlockType::Z => [
-        [0, 0, 0], //
-        [0, 0, 0],
-        [0, 0, 0],
-      ],
+      BlockType::J => match b_rot {
+        BlockRot::Rot0 => [
+          [0, 0, 0], //
+          [1, 1, 1],
+          [0, 0, 1],
+        ],
+        BlockRot::Rot1 => [
+          [0, 1, 0], //
+          [0, 1, 0],
+          [1, 1, 0],
+        ],
+        BlockRot::Rot2 => [
+          [0, 0, 0], //
+          [1, 0, 0],
+          [1, 1, 1],
+        ],
+        BlockRot::Rot3 => [
+          [0, 1, 1], //
+          [0, 1, 0],
+          [0, 1, 0],
+        ],
+      },
+      BlockType::L => match b_rot {
+        BlockRot::Rot0 => [
+          [0, 0, 0], //
+          [1, 1, 1],
+          [1, 0, 0],
+        ],
+        BlockRot::Rot1 => [
+          [1, 1, 0], //
+          [0, 1, 0],
+          [0, 1, 0],
+        ],
+        BlockRot::Rot2 => [
+          [0, 0, 0], //
+          [0, 0, 1],
+          [1, 1, 1],
+        ],
+        BlockRot::Rot3 => [
+          [0, 1, 0], //
+          [0, 1, 0],
+          [0, 1, 1],
+        ],
+      },
+      BlockType::S => match b_rot {
+        BlockRot::Rot0 => [
+          [0, 0, 0], //
+          [0, 1, 1],
+          [1, 1, 0],
+        ],
+        BlockRot::Rot1 => [
+          [1, 0, 0], //
+          [1, 1, 0],
+          [0, 1, 0],
+        ],
+        BlockRot::Rot2 => [
+          [0, 0, 0], //
+          [0, 1, 1],
+          [1, 1, 0],
+        ],
+        BlockRot::Rot3 => [
+          [1, 0, 0], //
+          [1, 1, 0],
+          [0, 1, 0],
+        ],
+      },
+      BlockType::Z => match b_rot {
+        BlockRot::Rot0 => [
+          [0, 0, 0], //
+          [1, 1, 0],
+          [0, 1, 1],
+        ],
+        BlockRot::Rot1 => [
+          [0, 0, 1], //
+          [0, 1, 1],
+          [0, 1, 0],
+        ],
+        BlockRot::Rot2 => [
+          [0, 0, 0], //
+          [1, 1, 0],
+          [0, 1, 1],
+        ],
+        BlockRot::Rot3 => [
+          [0, 0, 1], //
+          [0, 1, 1],
+          [0, 1, 0],
+        ],
+      },
       _ => panic!("unknown 3x3 type"),
     };
   }
