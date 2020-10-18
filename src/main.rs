@@ -215,8 +215,36 @@ impl Board {
     self.next_block_type = BlockType::rand();
   }
 
-  fn clear_full_rows(&self) -> i32 {
-    return 0;
+  fn is_row_full(&self, row: i32) -> bool {
+    for x in 0..self.width() {
+      match self.cell_value_raw(x, row) {
+        CellVal::Free => return false,
+        _ => (),
+      }
+    }
+    return true;
+  }
+
+  fn remove_row(&mut self, row: i32) {
+    for y in (0..row).rev() {
+      for x in 0..self.width() {
+        self.cells[(y + 1) as usize][x as usize] = self.cells[y as usize][x as usize];
+      }
+    }
+    for x in 0..self.width() {
+      self.cells[0][x as usize] = CellVal::Free;
+    }
+  }
+
+  fn clear_full_rows(&mut self) -> i32 {
+    let mut count = 0;
+    for y in 0..self.height() {
+      if self.is_row_full(y) {
+        self.remove_row(y);
+        count = count + 1;
+      }
+    }
+    return count;
   }
 }
 
