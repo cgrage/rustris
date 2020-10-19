@@ -71,6 +71,10 @@ impl Board {
     };
   }
 
+  pub fn clear(&mut self) {
+    self.cells = [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y];
+  }
+
   pub fn width(&self) -> i32 {
     return BOARD_DIM_X as i32;
   }

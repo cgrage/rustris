@@ -68,5 +68,15 @@ impl Game {
         /*let row_count =*/
         board.clear_full_rows();
         board.next_block();
+        if board.collides() {
+            // our (just placed) new block already collides..
+            // player lost the game.
+            self.new_game(board);
+        }
+    }
+
+    fn new_game(&self, board: &mut Board) {
+        board.clear();
+        board.next_block();
     }
 }
