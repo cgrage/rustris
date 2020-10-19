@@ -59,16 +59,18 @@ pub struct Board {
 
 impl Board {
   pub fn new() -> Board {
-    return Board {
+    let mut board = Board {
       cells: [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y],
-      block_type: BlockType::rand(),
+      block_type: BlockType::I,
       block_rot: BlockRot::Rot0,
-      block_pos: (BOARD_DIM_X as i32 / 2, 0),
+      block_pos: (0, 0),
       time: 0,
       time_to_step: 10,
       step_interval: 10,
       next_block_type: BlockType::rand(),
     };
+    board.next_block();
+    return board;
   }
 
   pub fn clear(&mut self) {
@@ -174,7 +176,7 @@ impl Board {
   pub fn next_block(&mut self) {
     self.block_type = self.next_block_type;
     self.block_rot = BlockRot::Rot0;
-    self.block_pos = (BOARD_DIM_X as i32 / 2, 0);
+    self.block_pos = (BOARD_DIM_X as i32 / 2 - 2, 0);
     self.next_block_type = BlockType::rand();
   }
 
@@ -208,6 +210,18 @@ impl Board {
       }
     }
     return count;
+  }
+}
+
+pub struct UiState {
+  pub style: i32,
+}
+
+impl UiState {
+  pub fn new() -> UiState {
+    return UiState { 
+      style: 0
+    }
   }
 }
 

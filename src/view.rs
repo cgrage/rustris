@@ -1,6 +1,6 @@
 extern crate pancurses;
 
-use model::{Board, CellVal};
+use model::{Board, CellVal, UiState};
 
 pub enum UserInput {
     UserWantsToQuit,
@@ -10,6 +10,7 @@ pub enum UserInput {
     DropDown,
     RotateLeft,
     RotateRight,
+    ChangeUI,
     NoInput,
 }
 
@@ -74,13 +75,13 @@ impl UI {
         let ch = self.screen.getch();
         match ch {
             Some(pancurses::Input::Character('q')) => UserInput::UserWantsToQuit,
-            // Some(pancurses::Input::Unknown(27)) => UserInput::UserWantsToQuit, // 27 is ESC key
             Some(pancurses::Input::KeyLeft) => UserInput::RotateLeft,
             Some(pancurses::Input::KeyRight) => UserInput::RotateRight,
             Some(pancurses::Input::Character('a')) => UserInput::MoveLeft,
             Some(pancurses::Input::Character('d')) => UserInput::MoveRight,
             Some(pancurses::Input::Character('s')) => UserInput::MoveDown,
             Some(pancurses::Input::Character('w')) => UserInput::DropDown,
+            Some(pancurses::Input::Character(' ')) => UserInput::ChangeUI,
             _ => UserInput::NoInput,
         }
     }
@@ -111,12 +112,29 @@ impl UI {
         };
     }
 
+    pub fn change(&self, state: &mut UiState) {
+        match state.style {
+            0 => {
+                UI::draw_panel_border(&self.panel_2, 1);
+                state.style = 1;
+            }
+            1 => {
+                UI::draw_panel_border(&self.panel_2, 2);
+                state.style = 2;
+            }
+            _ => {
+                UI::draw_panel_border(&self.panel_2, 0);
+                state.style = 0;
+            }
+        }
+    }
+
     fn create_panel_1(app_win: &pancurses::Window) -> pancurses::Window {
         let panel = match app_win.subwin(22, 24, 0, 0) {
             Ok(win) => win,
             Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
         };
-        panel.mvaddstr(00, 0, "#                       ");
+        panel.mvaddstr(00, 0, "+                       ");
         panel.mvaddstr(01, 0, " This is RUSTRIX,       ");
         panel.mvaddstr(02, 0, "                        ");
         panel.mvaddstr(03, 0, " a tile matching video  ");
@@ -137,7 +155,7 @@ impl UI {
         panel.mvaddstr(18, 0, "  Left - Rotate         ");
         panel.mvaddstr(19, 0, " Right - Rotate         ");
         panel.mvaddstr(20, 0, " Space - Change UI      ");
-        panel.mvaddstr(21, 0, "#                       ");
+        panel.mvaddstr(21, 0, "+                       ");
         return panel;
     }
 
@@ -153,6 +171,30 @@ impl UI {
     fn draw_panel_border(panel: &pancurses::Window, variant: i32) {
         match variant {
             0 => {
+                panel.mvaddstr(00, 0, "-+--------------------+-");
+                panel.mvaddstr(01, 0, " :                    : ");
+                panel.mvaddstr(02, 0, " :                    : ");
+                panel.mvaddstr(03, 0, " :                    : ");
+                panel.mvaddstr(04, 0, " :                    : ");
+                panel.mvaddstr(05, 0, " :                    : ");
+                panel.mvaddstr(06, 0, " :                    : ");
+                panel.mvaddstr(07, 0, " :                    : ");
+                panel.mvaddstr(08, 0, " :                    : ");
+                panel.mvaddstr(09, 0, " :                    : ");
+                panel.mvaddstr(10, 0, " :                    : ");
+                panel.mvaddstr(11, 0, " :                    : ");
+                panel.mvaddstr(12, 0, " :                    : ");
+                panel.mvaddstr(13, 0, " :                    : ");
+                panel.mvaddstr(14, 0, " :                    : ");
+                panel.mvaddstr(15, 0, " :                    : ");
+                panel.mvaddstr(16, 0, " :                    : ");
+                panel.mvaddstr(17, 0, " :                    : ");
+                panel.mvaddstr(18, 0, " :                    : ");
+                panel.mvaddstr(19, 0, " :                    : ");
+                panel.mvaddstr(20, 0, " :                    : ");
+                panel.mvaddstr(21, 0, "-+--------------------+-");
+            }
+            1 => {
                 panel.mvaddstr(00, 0, "########################");
                 panel.mvaddstr(01, 0, "##                    ##");
                 panel.mvaddstr(02, 0, "##                    ##");
@@ -208,28 +250,28 @@ impl UI {
             Ok(win) => win,
             Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
         };
-        panel.mvaddstr(00, 0, "                       #");
-        panel.mvaddstr(01, 0, "            +--------+  ");
-        panel.mvaddstr(02, 0, "   Next     :[][][][]:  ");
-        panel.mvaddstr(03, 0, "   Block:   :[][][][]:  ");
-        panel.mvaddstr(04, 0, "            :[][][][]:  ");
-        panel.mvaddstr(05, 0, "            :[][][][]:  ");
-        panel.mvaddstr(06, 0, "            +--------+  ");
+        panel.mvaddstr(00, 0, "                       +");
+        panel.mvaddstr(01, 0, "          +--------+    ");
+        panel.mvaddstr(02, 0, " Next     :[][][][]:    ");
+        panel.mvaddstr(03, 0, " Block:   :[][][][]:    ");
+        panel.mvaddstr(04, 0, "          :[][][][]:    ");
+        panel.mvaddstr(05, 0, "          :[][][][]:    ");
+        panel.mvaddstr(06, 0, "          +--------+    ");
         panel.mvaddstr(07, 0, "                        ");
-        panel.mvaddstr(08, 0, " Current Level:     0   ");
-        panel.mvaddstr(09, 0, " Lines Cleared:     0   ");
+        panel.mvaddstr(08, 0, " Current Level:       0 ");
+        panel.mvaddstr(09, 0, " Lines Cleared:       0 ");
         panel.mvaddstr(10, 0, "                        ");
-        panel.mvaddstr(11, 0, " Four-Liners:       0   ");
-        panel.mvaddstr(12, 0, " Three-Liners:      0   ");
-        panel.mvaddstr(13, 0, " Two-Liners:        0   ");
-        panel.mvaddstr(14, 0, " One-Liners:        0   ");
+        panel.mvaddstr(11, 0, " Four-Liners:         0 ");
+        panel.mvaddstr(12, 0, " Three-Liners:        0 ");
+        panel.mvaddstr(13, 0, " Two-Liners:          0 ");
+        panel.mvaddstr(14, 0, " One-Liners:          0 ");
         panel.mvaddstr(15, 0, "                        ");
-        panel.mvaddstr(16, 0, " Points:            0   ");
-        panel.mvaddstr(17, 0, "                        ");
+        panel.mvaddstr(16, 0, " Points:              0 ");
+        panel.mvaddstr(17, 0, " Top-Score:           0 ");
         panel.mvaddstr(18, 0, "                        ");
-        panel.mvaddstr(19, 0, "                        ");
-        panel.mvaddstr(20, 0, " Top-Score:         0   ");
-        panel.mvaddstr(21, 0, "                       #");
+        panel.mvaddstr(19, 0, " https://github.com/..  ");
+        panel.mvaddstr(20, 0, "       /cgrage/rustrix  ");
+        panel.mvaddstr(21, 0, "                       +");
         return panel;
     }
 }
