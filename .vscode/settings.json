@@ -1,7 +1,6 @@
 {
     "cSpell.words": [
         "Grage",
-        "RUSTRIX",
         "cbreak",
         "cgrage",
         "endwin",
@@ -11,6 +10,7 @@
         "noecho",
         "pancurses",
         "printw",
+        "rustris",
         "subwin"
     ]
 }

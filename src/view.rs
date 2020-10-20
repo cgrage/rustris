@@ -135,7 +135,7 @@ impl UI {
             Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
         };
         panel.mvaddstr(00, 0, "+                       ");
-        panel.mvaddstr(01, 0, " This is RUSTRIX,       ");
+        panel.mvaddstr(01, 0, " This is RUSTRIS,       ");
         panel.mvaddstr(02, 0, "                        ");
         panel.mvaddstr(03, 0, " a tile matching video  ");
         panel.mvaddstr(04, 0, " game written in the    ");
@@ -270,7 +270,7 @@ impl UI {
         panel.mvaddstr(17, 0, " Top-Score:           0 ");
         panel.mvaddstr(18, 0, "                        ");
         panel.mvaddstr(19, 0, " https://github.com/..  ");
-        panel.mvaddstr(20, 0, "       /cgrage/rustrix  ");
+        panel.mvaddstr(20, 0, "       /cgrage/rustris  ");
         panel.mvaddstr(21, 0, "                       +");
         return panel;
     }
