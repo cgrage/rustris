@@ -62,33 +62,34 @@ pub enum UserInput {
   RotateLeft,
   RotateRight,
   ChangeUI,
+  Reset,
   NoInput,
 }
 
 pub struct Stats {
   pub cleared: i32,
-  pub four_liners: i32,
-  pub three_liners: i32,
-  pub two_liners: i32,
-  pub one_liners: i32,
+  pub clr_cmb_4: i32,
+  pub clr_cmb_3: i32,
+  pub clr_cmb_2: i32,
+  pub clr_cmb_1: i32,
 }
 
 impl Stats {
   pub fn new() -> Stats {
     return Stats {
       cleared: 0,
-      four_liners: 0,
-      three_liners: 0,
-      two_liners: 0,
-      one_liners: 0,
+      clr_cmb_4: 0,
+      clr_cmb_3: 0,
+      clr_cmb_2: 0,
+      clr_cmb_1: 0,
     };
   }
 
   pub fn reset(&mut self) {
     self.cleared = 0;
-    self.four_liners = 0;
-    self.three_liners = 0;
-    self.two_liners = 0;
-    self.one_liners = 0;
+    self.clr_cmb_4 = 0;
+    self.clr_cmb_3 = 0;
+    self.clr_cmb_2 = 0;
+    self.clr_cmb_1 = 0;
   }
 }

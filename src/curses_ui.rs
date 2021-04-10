@@ -2,6 +2,11 @@ extern crate pancurses;
 
 use board::Board;
 use common::{CellVal, Stats, UiState, UserInput};
+use std::time::Duration;
+use std::time::Instant;
+
+const SLEEP_TIME: Duration = std::time::Duration::from_millis(16);
+const ONE_SECOND: Duration = std::time::Duration::from_secs(1);
 
 #[derive(Debug)]
 pub struct UI {
@@ -10,6 +15,9 @@ pub struct UI {
     panel_1: pancurses::Window,
     panel_2: pancurses::Window,
     panel_3: pancurses::Window,
+    fps_count: i32,
+    fps_time: Instant,
+    fps_value: i32,
 }
 
 impl UI {
@@ -32,7 +40,7 @@ impl UI {
             ));
         }
         screen.clear();
-        screen.timeout(30);
+        screen.nodelay(true);
         screen.keypad(true);
         pancurses::noecho();
         pancurses::cbreak();
@@ -45,6 +53,9 @@ impl UI {
             panel_2: UI::create_panel_2(&app_win),
             panel_3: UI::create_panel_3(&app_win),
             app_win: app_win,
+            fps_count: 0,
+            fps_time: Instant::now(),
+            fps_value: -1,
         });
     }
 
@@ -61,6 +72,7 @@ impl UI {
     }
 
     pub fn wait_for_user_input(&self) -> UserInput {
+        std::thread::sleep(SLEEP_TIME);
         let ch = self.screen.getch();
         match ch {
             Some(pancurses::Input::Character('q')) => UserInput::UserWantsToQuit,
@@ -71,17 +83,28 @@ impl UI {
             Some(pancurses::Input::Character('s')) => UserInput::MoveDown,
             Some(pancurses::Input::Character('w')) => UserInput::DropDown,
             Some(pancurses::Input::Character(' ')) => UserInput::ChangeUI,
+            Some(pancurses::Input::Character('n')) => UserInput::Reset,
             _ => UserInput::NoInput,
         }
     }
 
-    pub fn draw(&self, board: &Board) {
+    pub fn draw(&mut self, board: &Board, stats: &Stats) {
+        let now = Instant::now();
+        if now.duration_since(self.fps_time) > ONE_SECOND {
+            // println!("FPS: {}", self.fps_value);
+            self.fps_value = self.fps_count;
+            self.fps_count = 0;
+            self.fps_time = now;
+        }
+
         self.draw_board(&board);
-        self.draw_stats(&board.stats);
+        self.draw_stats(&stats);
         self.draw_next_block(&board);
 
-        self.app_win.touch();
-        self.app_win.refresh();
+       self.app_win.touch();
+       self.app_win.refresh();
+
+        self.fps_count += 1;
     }
 
     fn draw_board(&self, board: &Board) {
@@ -95,15 +118,16 @@ impl UI {
     }
 
     fn draw_stats(&self, stats: &Stats) {
-        self.panel_3.mvprintw(9, 16, format!("{:7}", stats.cleared));
-        self.panel_3.mvprintw(11, 16, format!("{:7}", stats.four_liners));
-        self.panel_3.mvprintw(12, 16, format!("{:7}", stats.three_liners));
-        self.panel_3.mvprintw(13, 16, format!("{:7}", stats.two_liners));
-        self.panel_3.mvprintw(14, 16, format!("{:7}", stats.one_liners));
+        self.panel_3.mvprintw(6, 16, format!("{:7}", stats.cleared));
+        self.panel_3.mvprintw(8, 16, format!("{:7}", stats.clr_cmb_4));
+        self.panel_3.mvprintw(9, 16, format!("{:7}", stats.clr_cmb_3));
+        self.panel_3.mvprintw(10, 16, format!("{:7}", stats.clr_cmb_2));
+        self.panel_3.mvprintw(11, 16, format!("{:7}", stats.clr_cmb_1));
+        self.panel_3.mvprintw(21, 20, format!("{:2}", self.fps_value));
     }
 
     fn draw_next_block(&self, board: &Board) {
-        for y in 0..4 {
+        for y in 0..3 {
             for x in 0..4 {
                 let val = board.nb_cell_value(x, y);
                 self.panel_3.mv(1 + y, 10 + 2 * x);
@@ -151,19 +175,19 @@ impl UI {
         panel.mvaddstr(05, 0, " rust programming       ");
         panel.mvaddstr(06, 0, " language.              ");
         panel.mvaddstr(07, 0, "                        ");
-        panel.mvaddstr(08, 0, " Please find the        ");
-        panel.mvaddstr(09, 0, " source code in         ");
-        panel.mvaddstr(10, 0, " github.                ");
-        panel.mvaddstr(11, 0, "                        ");
-        panel.mvaddstr(12, 0, " Key Mappings:          ");
-        panel.mvaddstr(13, 0, "     q - Quit           ");
-        panel.mvaddstr(14, 0, "     a - Move left      ");
-        panel.mvaddstr(15, 0, "     d - Move right     ");
-        panel.mvaddstr(16, 0, "     s - Move down      ");
-        panel.mvaddstr(17, 0, "     w - Drop           ");
-        panel.mvaddstr(18, 0, "  Left - Rotate         ");
-        panel.mvaddstr(19, 0, " Right - Rotate         ");
-        panel.mvaddstr(20, 0, " Space - Change UI      ");
+        panel.mvaddstr(08, 0, " Please find the source ");
+        panel.mvaddstr(09, 0, " code in github.        ");
+        panel.mvaddstr(10, 0, "                        ");
+        panel.mvaddstr(11, 0, " Key Mappings:          ");
+        panel.mvaddstr(12, 0, "     q - Quit           ");
+        panel.mvaddstr(13, 0, "     a - Move left      ");
+        panel.mvaddstr(14, 0, "     d - Move right     ");
+        panel.mvaddstr(15, 0, "     s - Move down      ");
+        panel.mvaddstr(16, 0, "     w - Drop           ");
+        panel.mvaddstr(17, 0, "  Left - Rotate         ");
+        panel.mvaddstr(18, 0, " Right - Rotate         ");
+        panel.mvaddstr(19, 0, " Space - Change UI      ");
+        panel.mvaddstr(20, 0, "     n - Reset          ");
         panel.mvaddstr(21, 0, "+                       ");
         return panel;
     }
@@ -263,24 +287,24 @@ impl UI {
         panel.mvaddstr(01, 0, " Next     ########      ");
         panel.mvaddstr(02, 0, " Block:   ########      ");
         panel.mvaddstr(03, 0, "          ########      ");
-        panel.mvaddstr(04, 0, "          ########      ");
-        panel.mvaddstr(05, 0, "                        ");
-        panel.mvaddstr(06, 0, "                        ");
+        panel.mvaddstr(04, 0, "                        ");
+        panel.mvaddstr(05, 0, " Current Level: ####### ");
+        panel.mvaddstr(06, 0, " Lines Cleared: ####### ");
         panel.mvaddstr(07, 0, "                        ");
-        panel.mvaddstr(08, 0, " Current Level: ####### ");
-        panel.mvaddstr(09, 0, " Lines Cleared: ####### ");
-        panel.mvaddstr(10, 0, "                        ");
-        panel.mvaddstr(11, 0, " Four-Liners:   ####### ");
-        panel.mvaddstr(12, 0, " Three-Liners:  ####### ");
-        panel.mvaddstr(13, 0, " Two-Liners:    ####### ");
-        panel.mvaddstr(14, 0, " One-Liners:    ####### ");
+        panel.mvaddstr(08, 0, " Four-Liners:   ####### ");
+        panel.mvaddstr(09, 0, " Three-Liners:  ####### ");
+        panel.mvaddstr(10, 0, " Two-Liners:    ####### ");
+        panel.mvaddstr(11, 0, " One-Liners:    ####### ");
+        panel.mvaddstr(12, 0, "                        ");
+        panel.mvaddstr(13, 0, " Points:        ####### ");
+        panel.mvaddstr(14, 0, " Top-Score:     ####### ");
         panel.mvaddstr(15, 0, "                        ");
-        panel.mvaddstr(16, 0, " Points:        ####### ");
-        panel.mvaddstr(17, 0, " Top-Score:     ####### ");
+        panel.mvaddstr(16, 0, " github.com/            ");
+        panel.mvaddstr(17, 0, "   cgrage/rustris       ");
         panel.mvaddstr(18, 0, "                        ");
-        panel.mvaddstr(19, 0, " https://github.com     ");
-        panel.mvaddstr(20, 0, "       /cgrage/rustris  ");
-        panel.mvaddstr(21, 0, "                       +");
+        panel.mvaddstr(19, 0, "                        ");
+        panel.mvaddstr(20, 0, "                        ");
+        panel.mvaddstr(21, 0, "               FPS: ## +");
         return panel;
     }
 }

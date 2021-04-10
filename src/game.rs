@@ -1,31 +1,40 @@
 use board::Board;
-use common::UserInput;
+use common::{Stats, UserInput};
 
-pub struct Game {}
+pub struct Game {
+    time: u32,
+    time_to_step: u32,
+    step_interval: u32,
+}
 
 impl Game {
     pub fn new() -> Game {
-        return Game {};
+        return Game {
+            time: 0,
+            time_to_step: 10,
+            step_interval: 10,
+        };
     }
 
-    pub fn step(&self, board: &mut Board) {
-        if board.time_to_step == 0 {
-            self.lower_block(board);
-            board.time_to_step = board.step_interval;
+    pub fn step(&mut self, board: &mut Board, stats : &mut Stats) {
+        if self.time_to_step == 0 {
+            self.lower_block(board, stats);
+            self.time_to_step = self.step_interval;
         } else {
-            board.time_to_step = board.time_to_step - 1;
+            self.time_to_step = self.time_to_step - 1;
         }
-        board.time = board.time + 1;
+        self.time += 1;
     }
 
-    pub fn handle_input(&self, input: &UserInput, board: &mut Board) {
+    pub fn handle_input(&self, input: &UserInput, board: &mut Board, stats : &mut Stats) {
         match input {
             UserInput::MoveLeft => self.move_block_vert(board, -1),
             UserInput::MoveRight => self.move_block_vert(board, 1),
-            UserInput::MoveDown => self.lower_block(board),
+            UserInput::MoveDown => self.lower_block(board, stats),
             UserInput::DropDown => self.drop_block(board),
             UserInput::RotateLeft => self.rotate_block(board, -1),
             UserInput::RotateRight => self.rotate_block(board, 1),
+            UserInput::Reset => self.new_game(board, stats),
             _ => (),
         };
     }
@@ -46,12 +55,12 @@ impl Game {
         }
     }
 
-    fn lower_block(&self, board: &mut Board) {
+    fn lower_block(&self, board: &mut Board, stats : &mut Stats) {
         board.move_block(0, 1);
         if board.collides() {
             // if we collide: undo action and FREEZE block
             board.move_block(0, -1);
-            self.freeze_block_and_have_next(board);
+            self.freeze_block_and_have_next(board, stats);
         }
     }
 
@@ -60,23 +69,41 @@ impl Game {
             board.move_block(0, 1);
         }
         board.move_block(0, -1);
-        self.freeze_block_and_have_next(board);
+
+        // We don't do this right now..
+        // self.freeze_block_and_have_next(board);
     }
 
-    fn freeze_block_and_have_next(&self, board: &mut Board) {
+    fn freeze_block_and_have_next(&self, board: &mut Board, stats : &mut Stats) {
         board.freeze_block();
-        /*let row_count =*/
-        board.clear_full_rows();
+
+        let row_count = board.clear_full_rows();
+        if row_count > 0 {
+            self.on_rows_cleared(row_count, stats)
+        };
+
         board.next_block();
         if board.collides() {
             // our (just placed) new block already collides..
             // player lost the game.
-            self.new_game(board);
+            self.new_game(board, stats);
         }
     }
 
-    fn new_game(&self, board: &mut Board) {
+    fn new_game(&self, board: &mut Board, stats : &mut Stats) {
         board.clear();
         board.next_block();
+        stats.reset();
+    }
+
+    fn on_rows_cleared(&self, amount: i32, stats : &mut Stats) {
+        stats.cleared += amount;
+        match amount {
+            1 => stats.clr_cmb_1 += 1,
+            2 => stats.clr_cmb_2 += 1,
+            3 => stats.clr_cmb_3 += 1,
+            4 => stats.clr_cmb_4 += 1,
+            _ => panic!("Cleared strange mount of lines.."),
+        }
     }
 }

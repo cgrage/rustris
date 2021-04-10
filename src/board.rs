@@ -1,4 +1,4 @@
-use common::{BlockRot, BlockType, CellVal, Stats};
+use common::{BlockRot, BlockType, CellVal};
 
 const BOARD_DIM_X: usize = 10;
 const BOARD_DIM_Y: usize = 20;
@@ -8,11 +8,7 @@ pub struct Board {
     block_type: BlockType,
     block_rot: BlockRot,
     block_pos: (i32, i32),
-    pub time: u32,
-    pub time_to_step: u32,
-    pub step_interval: u32,
     pub next_block_type: BlockType,
-    pub stats: Stats,
 }
 
 impl Board {
@@ -22,11 +18,7 @@ impl Board {
             block_type: BlockType::I,
             block_rot: BlockRot::Rot0,
             block_pos: (0, 0),
-            time: 0,
-            time_to_step: 10,
-            step_interval: 10,
             next_block_type: BlockType::rand(),
-            stats: Stats::new(),
         };
         board.next_block();
         return board;
@@ -34,7 +26,6 @@ impl Board {
 
     pub fn clear(&mut self) {
         self.cells = [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y];
-        self.stats.reset();
     }
 
     pub fn width(&self) -> i32 {
@@ -164,7 +155,7 @@ impl Board {
         }
     }
 
-    pub fn clear_full_rows(&mut self) {
+    pub fn clear_full_rows(&mut self) -> i32 {
         let mut count = 0;
         for y in 0..self.height() {
             if self.is_row_full(y) {
@@ -172,20 +163,7 @@ impl Board {
                 count = count + 1;
             }
         }
-        if count > 0 {
-            self.on_rows_cleared(count)
-        };
-    }
-
-    fn on_rows_cleared(&mut self, amount: i32) {
-        self.stats.cleared += amount;
-        match amount{
-            1 => self.stats.one_liners +=1,
-            2 => self.stats.two_liners +=1,
-            3 => self.stats.three_liners +=1,
-            4 => self.stats.four_liners +=1,
-            _ => panic!("Cleared strange mount of lines.."),
-        }
+        return count;
     }
 }
 
