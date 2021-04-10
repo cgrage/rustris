@@ -1,7 +1,7 @@
 extern crate pancurses;
 
-use common::{CellVal, UiState, UserInput};
 use board::Board;
+use common::{CellVal, Stats, UiState, UserInput};
 
 #[derive(Debug)]
 pub struct UI {
@@ -77,6 +77,8 @@ impl UI {
 
     pub fn draw(&self, board: &Board) {
         self.draw_board(&board);
+        self.draw_stats(&board.stats);
+        self.draw_next_block(&board);
 
         self.app_win.touch();
         self.app_win.refresh();
@@ -88,6 +90,24 @@ impl UI {
                 let val = board.cell_value(x, y);
                 self.panel_2.mv(1 + y, 2 + 2 * x);
                 self.panel_2.printw(self.cell_string(&val));
+            }
+        }
+    }
+
+    fn draw_stats(&self, stats: &Stats) {
+        self.panel_3.mvprintw(9, 16, format!("{:7}", stats.cleared));
+        self.panel_3.mvprintw(11, 16, format!("{:7}", stats.four_liners));
+        self.panel_3.mvprintw(12, 16, format!("{:7}", stats.three_liners));
+        self.panel_3.mvprintw(13, 16, format!("{:7}", stats.two_liners));
+        self.panel_3.mvprintw(14, 16, format!("{:7}", stats.one_liners));
+    }
+
+    fn draw_next_block(&self, board: &Board) {
+        for y in 0..4 {
+            for x in 0..4 {
+                let val = board.nb_cell_value(x, y);
+                self.panel_3.mv(1 + y, 10 + 2 * x);
+                self.panel_3.printw(self.cell_string(&val));
             }
         }
     }
@@ -240,25 +260,25 @@ impl UI {
             Err(code) => panic!("pancurses subwin function failed w/ result code {}", code),
         };
         panel.mvaddstr(00, 0, "                       +");
-        panel.mvaddstr(01, 0, "          +--------+    ");
-        panel.mvaddstr(02, 0, " Next     :[][][][]:    ");
-        panel.mvaddstr(03, 0, " Block:   :[][][][]:    ");
-        panel.mvaddstr(04, 0, "          :[][][][]:    ");
-        panel.mvaddstr(05, 0, "          :[][][][]:    ");
-        panel.mvaddstr(06, 0, "          +--------+    ");
+        panel.mvaddstr(01, 0, " Next     ########      ");
+        panel.mvaddstr(02, 0, " Block:   ########      ");
+        panel.mvaddstr(03, 0, "          ########      ");
+        panel.mvaddstr(04, 0, "          ########      ");
+        panel.mvaddstr(05, 0, "                        ");
+        panel.mvaddstr(06, 0, "                        ");
         panel.mvaddstr(07, 0, "                        ");
-        panel.mvaddstr(08, 0, " Current Level:       0 ");
-        panel.mvaddstr(09, 0, " Lines Cleared:       0 ");
+        panel.mvaddstr(08, 0, " Current Level: ####### ");
+        panel.mvaddstr(09, 0, " Lines Cleared: ####### ");
         panel.mvaddstr(10, 0, "                        ");
-        panel.mvaddstr(11, 0, " Four-Liners:         0 ");
-        panel.mvaddstr(12, 0, " Three-Liners:        0 ");
-        panel.mvaddstr(13, 0, " Two-Liners:          0 ");
-        panel.mvaddstr(14, 0, " One-Liners:          0 ");
+        panel.mvaddstr(11, 0, " Four-Liners:   ####### ");
+        panel.mvaddstr(12, 0, " Three-Liners:  ####### ");
+        panel.mvaddstr(13, 0, " Two-Liners:    ####### ");
+        panel.mvaddstr(14, 0, " One-Liners:    ####### ");
         panel.mvaddstr(15, 0, "                        ");
-        panel.mvaddstr(16, 0, " Points:              0 ");
-        panel.mvaddstr(17, 0, " Top-Score:           0 ");
+        panel.mvaddstr(16, 0, " Points:        ####### ");
+        panel.mvaddstr(17, 0, " Top-Score:     ####### ");
         panel.mvaddstr(18, 0, "                        ");
-        panel.mvaddstr(19, 0, " https://github.com/..  ");
+        panel.mvaddstr(19, 0, " https://github.com     ");
         panel.mvaddstr(20, 0, "       /cgrage/rustris  ");
         panel.mvaddstr(21, 0, "                       +");
         return panel;

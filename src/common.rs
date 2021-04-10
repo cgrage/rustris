@@ -43,16 +43,13 @@ pub enum BlockRot {
   Rot3,
 }
 
-
 pub struct UiState {
   pub style: i32,
 }
 
 impl UiState {
   pub fn new() -> UiState {
-    return UiState { 
-      style: 0
-    }
+    return UiState { style: 0 };
   }
 }
 
@@ -66,4 +63,32 @@ pub enum UserInput {
   RotateRight,
   ChangeUI,
   NoInput,
+}
+
+pub struct Stats {
+  pub cleared: i32,
+  pub four_liners: i32,
+  pub three_liners: i32,
+  pub two_liners: i32,
+  pub one_liners: i32,
+}
+
+impl Stats {
+  pub fn new() -> Stats {
+    return Stats {
+      cleared: 0,
+      four_liners: 0,
+      three_liners: 0,
+      two_liners: 0,
+      one_liners: 0,
+    };
+  }
+
+  pub fn reset(&mut self) {
+    self.cleared = 0;
+    self.four_liners = 0;
+    self.three_liners = 0;
+    self.two_liners = 0;
+    self.one_liners = 0;
+  }
 }
