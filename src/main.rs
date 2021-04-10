@@ -1,12 +1,16 @@
-mod common;
-mod game;
 mod board;
+mod common;
 mod curses_ui;
+mod game;
 
-use common::{UiState, UserInput, Stats};
 use board::Board;
-use game::Game;
+use common::{Stats, UiState, UserInput};
 use curses_ui::UI;
+use game::Game;
+use std::time::{Duration, Instant};
+
+const SLEEP_TIME: Duration = Duration::from_millis(0);
+const FRAME_TIME: Duration = Duration::from_nanos(16666667);
 
 fn main() {
   let ui_result = UI::new();
@@ -23,7 +27,9 @@ fn main() {
   let mut game = Game::new(); // controller
 
   loop {
-    let user_input = ui.wait_for_user_input();
+    let t_start = Instant::now();
+    let user_input = ui.read_user_input();
+
     match user_input {
       UserInput::UserWantsToQuit => break,
       UserInput::ChangeUI => ui.change(&mut ui_state),
@@ -32,6 +38,10 @@ fn main() {
 
     game.step(&mut board, &mut stats);
     ui.draw(&board, &stats);
+
+    while Instant::now() - t_start < FRAME_TIME {
+      std::thread::sleep(SLEEP_TIME);
+    }
   }
 
   ui.destroy();

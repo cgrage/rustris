@@ -2,11 +2,9 @@ extern crate pancurses;
 
 use board::Board;
 use common::{CellVal, Stats, UiState, UserInput};
-use std::time::Duration;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-const SLEEP_TIME: Duration = std::time::Duration::from_millis(16);
-const ONE_SECOND: Duration = std::time::Duration::from_secs(1);
+const ONE_SECOND: Duration = Duration::from_secs(1);
 
 #[derive(Debug)]
 pub struct UI {
@@ -71,8 +69,7 @@ impl UI {
         pancurses::endwin();
     }
 
-    pub fn wait_for_user_input(&self) -> UserInput {
-        std::thread::sleep(SLEEP_TIME);
+    pub fn read_user_input(&self) -> UserInput {
         let ch = self.screen.getch();
         match ch {
             Some(pancurses::Input::Character('q')) => UserInput::UserWantsToQuit,
@@ -91,7 +88,6 @@ impl UI {
     pub fn draw(&mut self, board: &Board, stats: &Stats) {
         let now = Instant::now();
         if now.duration_since(self.fps_time) > ONE_SECOND {
-            // println!("FPS: {}", self.fps_value);
             self.fps_value = self.fps_count;
             self.fps_count = 0;
             self.fps_time = now;
@@ -101,8 +97,8 @@ impl UI {
         self.draw_stats(&stats);
         self.draw_next_block(&board);
 
-       self.app_win.touch();
-       self.app_win.refresh();
+        self.app_win.touch();
+        self.app_win.refresh();
 
         self.fps_count += 1;
     }
@@ -123,7 +119,7 @@ impl UI {
         self.panel_3.mvprintw(9, 16, format!("{:7}", stats.clr_cmb_3));
         self.panel_3.mvprintw(10, 16, format!("{:7}", stats.clr_cmb_2));
         self.panel_3.mvprintw(11, 16, format!("{:7}", stats.clr_cmb_1));
-        self.panel_3.mvprintw(21, 20, format!("{:2}", self.fps_value));
+        self.panel_3.mvprintw(20, 21, format!("{:2}", self.fps_value));
     }
 
     fn draw_next_block(&self, board: &Board) {
@@ -303,8 +299,8 @@ impl UI {
         panel.mvaddstr(17, 0, "   cgrage/rustris       ");
         panel.mvaddstr(18, 0, "                        ");
         panel.mvaddstr(19, 0, "                        ");
-        panel.mvaddstr(20, 0, "                        ");
-        panel.mvaddstr(21, 0, "               FPS: ## +");
+        panel.mvaddstr(20, 0, "                FPS: ## ");
+        panel.mvaddstr(21, 0, "                       +");
         return panel;
     }
 }
