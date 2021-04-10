@@ -1,18 +1,7 @@
 extern crate pancurses;
 
-use model::{Board, CellVal, UiState};
-
-pub enum UserInput {
-    UserWantsToQuit,
-    MoveLeft,
-    MoveRight,
-    MoveDown,
-    DropDown,
-    RotateLeft,
-    RotateRight,
-    ChangeUI,
-    NoInput,
-}
+use common::{CellVal, UiState, UserInput};
+use board::Board;
 
 #[derive(Debug)]
 pub struct UI {

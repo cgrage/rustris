@@ -1,5 +1,5 @@
-use model::Board;
-use view::UserInput;
+use board::Board;
+use common::UserInput;
 
 pub struct Game {}
 
