@@ -3,10 +3,10 @@ mod common;
 mod curses_ui;
 mod game;
 
-use board::Board;
-use common::{Stats, UiState, UserInput};
-use curses_ui::UI;
-use game::Game;
+use crate::board::Board;
+use crate::common::{Stats, UiState, UserInput};
+use crate::curses_ui::UI;
+use crate::game::Game;
 use std::time::{Duration, Instant};
 
 const SLEEP_TIME: Duration = Duration::from_millis(0);

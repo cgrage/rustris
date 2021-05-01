@@ -1,0 +1,13 @@
+[package]
+name = "rustris-wasm"
+version = "0.1.0"
+authors = ["Christian Grage <christian.grage@gmx.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"

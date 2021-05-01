@@ -1,7 +1,5 @@
-extern crate rand;
-
-use self::rand::Rng;
-use common::CellVal;
+use rand::Rng;
+use crate::common::CellVal;
 
 const BOARD_DIM_X: usize = 10;
 const BOARD_DIM_Y: usize = 20;

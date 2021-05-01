@@ -1,7 +1,5 @@
-extern crate pancurses;
-
-use board::Board;
-use common::{CellVal, Stats, UiState, UserInput};
+use crate::board::Board;
+use crate::common::{CellVal, Stats, UiState, UserInput};
 use std::time::{Duration, Instant};
 
 const ONE_SECOND: Duration = Duration::from_secs(1);

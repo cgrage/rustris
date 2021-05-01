@@ -1,7 +1,2 @@
-[package]
-name = "rustris"
-version = "0.0.1"
-
-[dependencies]
-pancurses = "0.16"
-rand = "0.7.3"
+[workspace]
+members = ["rustris-core", "rustris-cmdl", "rustris-wasm"]

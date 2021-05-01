@@ -1,6 +1,4 @@
-extern crate rand;
-
-use self::rand::Rng;
+use rand::Rng;
 
 #[derive(Copy, Clone)]
 pub enum CellVal {

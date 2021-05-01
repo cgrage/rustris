@@ -1,5 +1,5 @@
-use board::Board;
-use common::{Stats, UserInput};
+use crate::board::Board;
+use crate::common::{Stats, UserInput};
 
 pub struct Game {
     time: u32,
