@@ -1,4 +1,7 @@
-use common::{BlockRot, BlockType, CellVal};
+extern crate rand;
+
+use self::rand::Rng;
+use common::CellVal;
 
 const BOARD_DIM_X: usize = 10;
 const BOARD_DIM_Y: usize = 20;
@@ -11,6 +14,39 @@ pub struct Board {
     block_offset: (i32, i32),
     next_block_type: BlockType,
     next_block_color: CellVal,
+}
+
+#[derive(Copy, Clone)]
+enum BlockType {
+    I,
+    O,
+    T,
+    J,
+    L,
+    S,
+    Z,
+}
+
+impl BlockType {
+    pub fn rand() -> BlockType {
+        let mut rnd = rand::thread_rng();
+        return match rnd.gen_range(0, 7) {
+            0 => BlockType::I,
+            1 => BlockType::O,
+            2 => BlockType::T,
+            3 => BlockType::J,
+            4 => BlockType::L,
+            5 => BlockType::S,
+            _ => BlockType::Z,
+        };
+    }
+}
+
+enum BlockRot {
+    Rot0,
+    Rot1,
+    Rot2,
+    Rot3,
 }
 
 impl Board {

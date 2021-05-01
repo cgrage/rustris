@@ -14,8 +14,8 @@ cargo build
 
 ## Run
 
-Run the built game by starting the debug executable:
+Run the built game by 'cargo run':
 
 ```bash
-./target/debug/rustris
+cargo run
 ```
