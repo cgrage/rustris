@@ -5,9 +5,35 @@ use self::rand::Rng;
 #[derive(Copy, Clone)]
 pub enum CellVal {
   Free,
-  Garbage,
-  ActivePiece,
   OutOfBoard,
+  Color0,
+  Color1,
+  Color2,
+  Color3,
+  Color4,
+  Color5,
+  Color6,
+  Color7,
+  Color8,
+  Color9,
+}
+
+impl CellVal {
+  pub fn rand_color() -> CellVal {
+    let mut rnd = rand::thread_rng();
+    return match rnd.gen_range(0, 10) {
+      0 => CellVal::Color0,
+      1 => CellVal::Color1,
+      2 => CellVal::Color2,
+      3 => CellVal::Color3,
+      4 => CellVal::Color4,
+      5 => CellVal::Color5,
+      6 => CellVal::Color6,
+      7 => CellVal::Color7,
+      8 => CellVal::Color8,
+      _ => CellVal::Color9,
+    };
+  }
 }
 
 #[derive(Copy, Clone)]

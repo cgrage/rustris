@@ -94,8 +94,9 @@ impl UI {
         }
 
         self.draw_board(&board);
-        self.draw_stats(&stats);
+        self.draw_active_block(&board);
         self.draw_next_block(&board);
+        self.draw_stats(&stats);
 
         self.app_win.touch();
         self.app_win.refresh();
@@ -106,7 +107,7 @@ impl UI {
     fn draw_board(&self, board: &Board) {
         for y in 0..board.height() {
             for x in 0..board.width() {
-                let val = board.cell_value(x, y);
+                let val = board.cell_value_at_board(x, y);
                 self.panel_2.mv(1 + y, 2 + 2 * x);
                 self.panel_2.printw(self.cell_string(&val));
             }
@@ -122,10 +123,27 @@ impl UI {
         self.panel_3.mvprintw(20, 21, format!("{:2}", self.fps_value));
     }
 
+    fn draw_active_block(&self, board: &Board) {
+        for y in 0..4 {
+            for x in 0..4 {
+                let val = board.cell_value_at_active_block(x, y);
+                match val {
+                    CellVal::Free => (),
+                    CellVal::OutOfBoard => (),
+                    _ => {
+                        let (px, py) = board.active_block_pos_to_board_pos(x, y);
+                        self.panel_2.mv(1 + py, 2 + 2 * px);
+                        self.panel_2.printw("[]");
+                    }
+                }
+            }
+        }
+    }
+
     fn draw_next_block(&self, board: &Board) {
         for y in 0..3 {
             for x in 0..4 {
-                let val = board.nb_cell_value(x, y);
+                let val = board.cell_value_at_next_block(x, y);
                 self.panel_3.mv(1 + y, 10 + 2 * x);
                 self.panel_3.printw(self.cell_string(&val));
             }
@@ -135,8 +153,16 @@ impl UI {
     fn cell_string(&self, val: &CellVal) -> &str {
         return match val {
             CellVal::Free => "  ",
-            CellVal::Garbage => "{}",
-            CellVal::ActivePiece => "[]",
+            CellVal::Color0 => "{}",
+            CellVal::Color1 => "{}",
+            CellVal::Color2 => "{}",
+            CellVal::Color3 => "{}",
+            CellVal::Color4 => "{}",
+            CellVal::Color5 => "{}",
+            CellVal::Color6 => "{}",
+            CellVal::Color7 => "{}",
+            CellVal::Color8 => "{}",
+            CellVal::Color9 => "{}",
             CellVal::OutOfBoard => "??",
         };
     }
