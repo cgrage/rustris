@@ -3,7 +3,6 @@ use crate::common::{Stats, UserInput};
 
 pub struct Game {
     time: u32,
-    time_to_step: u32,
     step_interval: u32,
 }
 
@@ -11,19 +10,15 @@ impl Game {
     pub fn new() -> Game {
         return Game {
             time: 0,
-            time_to_step: 10,
             step_interval: 10,
         };
     }
 
-    pub fn step(&mut self, board: &mut Board, stats : &mut Stats) {
-        if self.time_to_step == 0 {
-            self.lower_block(board, stats);
-            self.time_to_step = self.step_interval;
-        } else {
-            self.time_to_step = self.time_to_step - 1;
-        }
+    pub fn run_step(&mut self, board: &mut Board, stats : &mut Stats) {
         self.time += 1;
+        if self.time % self.step_interval == 0 {
+            self.lower_block(board, stats);
+        }
     }
 
     pub fn handle_input(&self, input: &UserInput, board: &mut Board, stats : &mut Stats) {
@@ -35,7 +30,7 @@ impl Game {
             UserInput::RotateLeft => self.rotate_block(board, -1),
             UserInput::RotateRight => self.rotate_block(board, 1),
             UserInput::Reset => self.new_game(board, stats),
-            _ => (),
+            UserInput::NoInput => (),
         };
     }
 

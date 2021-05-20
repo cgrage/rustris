@@ -34,25 +34,13 @@ impl CellVal {
   }
 }
 
-pub struct UiState {
-  pub style: i32,
-}
-
-impl UiState {
-  pub fn new() -> UiState {
-    return UiState { style: 0 };
-  }
-}
-
 pub enum UserInput {
-  UserWantsToQuit,
   MoveLeft,
   MoveRight,
   MoveDown,
   DropDown,
   RotateLeft,
   RotateRight,
-  ChangeUI,
   Reset,
   NoInput,
 }

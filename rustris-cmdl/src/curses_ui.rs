@@ -1,5 +1,5 @@
-use crate::board::Board;
-use crate::common::{CellVal, Stats, UiState, UserInput};
+use rustris_core::board::Board;
+use rustris_core::common::{CellVal, Stats, UserInput};
 use std::time::{Duration, Instant};
 
 const ONE_SECOND: Duration = Duration::from_secs(1);
@@ -14,6 +14,22 @@ pub struct UI {
     fps_count: i32,
     fps_time: Instant,
     fps_value: i32,
+}
+
+pub enum UiInput {
+    ChangeUI,
+    UserWantsToQuit,
+    NoInput,
+}
+
+pub struct UiState {
+    pub style: i32,
+}
+
+impl UiState {
+    pub fn new() -> UiState {
+        return UiState { style: 0 };
+    }
 }
 
 impl UI {
@@ -67,20 +83,25 @@ impl UI {
         pancurses::endwin();
     }
 
-    pub fn read_user_input(&self) -> UserInput {
+    pub fn read_user_input(&self) -> (UserInput, UiInput) {
         let ch = self.screen.getch();
-        match ch {
-            Some(pancurses::Input::Character('q')) => UserInput::UserWantsToQuit,
-            Some(pancurses::Input::KeyLeft) => UserInput::RotateLeft,
-            Some(pancurses::Input::KeyRight) => UserInput::RotateRight,
-            Some(pancurses::Input::Character('a')) => UserInput::MoveLeft,
-            Some(pancurses::Input::Character('d')) => UserInput::MoveRight,
-            Some(pancurses::Input::Character('s')) => UserInput::MoveDown,
-            Some(pancurses::Input::Character('w')) => UserInput::DropDown,
-            Some(pancurses::Input::Character(' ')) => UserInput::ChangeUI,
-            Some(pancurses::Input::Character('n')) => UserInput::Reset,
-            _ => UserInput::NoInput,
-        }
+        return (
+            match ch {
+                Some(pancurses::Input::KeyLeft) => UserInput::RotateLeft,
+                Some(pancurses::Input::KeyRight) => UserInput::RotateRight,
+                Some(pancurses::Input::Character('a')) => UserInput::MoveLeft,
+                Some(pancurses::Input::Character('d')) => UserInput::MoveRight,
+                Some(pancurses::Input::Character('s')) => UserInput::MoveDown,
+                Some(pancurses::Input::Character('w')) => UserInput::DropDown,
+                Some(pancurses::Input::Character('n')) => UserInput::Reset,
+                _ => UserInput::NoInput,
+            },
+            match ch {
+                Some(pancurses::Input::Character('q')) => UiInput::UserWantsToQuit,
+                Some(pancurses::Input::Character(' ')) => UiInput::ChangeUI,
+                _ => UiInput::NoInput,
+            },
+        );
     }
 
     pub fn draw(&mut self, board: &Board, stats: &Stats) {

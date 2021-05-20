@@ -1,12 +1,9 @@
-mod board;
-mod common;
 mod curses_ui;
-mod game;
 
-use crate::board::Board;
-use crate::common::{Stats, UiState, UserInput};
-use crate::curses_ui::UI;
-use crate::game::Game;
+use crate::curses_ui::{UiInput, UiState, UI};
+use rustris_core::board::Board;
+use rustris_core::common::Stats;
+use rustris_core::game::Game;
 use std::time::{Duration, Instant};
 
 const SLEEP_TIME: Duration = Duration::from_millis(0);
@@ -28,15 +25,16 @@ fn main() {
 
   loop {
     let t_start = Instant::now();
-    let user_input = ui.read_user_input();
+    let (user_input, ui_input) = ui.read_user_input();
 
-    match user_input {
-      UserInput::UserWantsToQuit => break,
-      UserInput::ChangeUI => ui.change(&mut ui_state),
-      input => game.handle_input(&input, &mut board, &mut stats),
+    match ui_input {
+      UiInput::UserWantsToQuit => break,
+      UiInput::ChangeUI => ui.change(&mut ui_state),
+      _ => (),
     }
 
-    game.step(&mut board, &mut stats);
+    game.handle_input(&user_input, &mut board, &mut stats);
+    game.run_step(&mut board, &mut stats);
     ui.draw(&board, &stats);
 
     while Instant::now() - t_start < FRAME_TIME {

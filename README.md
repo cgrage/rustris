@@ -30,11 +30,25 @@ Run the built game by 'cargo run':
 cargo run
 ```
 
-## Build WASM 
+## Make it run in a browser
+
+### Install three.js
 
 ```bash
 cd rustris-wasm/
-wasm-pack build --target web
-python3 -m http.server --bind 127.0.0.1 --directory . 8080
-# navigate your browser to http://127.0.0.1:8080/rustris.html
+npm install --save three
 ```
+
+### Build WASM to npm package
+
+```bash
+wasm-pack build --target web
+```
+
+### Serve the site
+
+```bash
+python3 -m http.server --bind 127.0.0.1 --directory . 8080
+```
+
+Now navigate your browser to http://127.0.0.1:8080/rustris.html
