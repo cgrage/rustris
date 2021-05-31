@@ -1,5 +1,7 @@
+use rustris_core::block::Block;
 use rustris_core::board::Board;
 use rustris_core::common::{CellVal, Stats, UserInput};
+use rustris_core::game::Game;
 use std::time::{Duration, Instant};
 
 const ONE_SECOND: Duration = Duration::from_secs(1);
@@ -104,7 +106,7 @@ impl UI {
         );
     }
 
-    pub fn draw(&mut self, board: &Board, stats: &Stats) {
+    pub fn draw(&mut self, game: &Game) {
         let now = Instant::now();
         if now.duration_since(self.fps_time) > ONE_SECOND {
             self.fps_value = self.fps_count;
@@ -112,10 +114,10 @@ impl UI {
             self.fps_time = now;
         }
 
-        self.draw_board(&board);
-        self.draw_active_block(&board);
-        self.draw_next_block(&board);
-        self.draw_stats(&stats);
+        self.draw_board(&game.board);
+        self.draw_active_block(&game.active_block);
+        self.draw_next_block(&game.next_block);
+        self.draw_stats(&game.stats);
 
         self.app_win.touch();
         self.app_win.refresh();
@@ -126,7 +128,7 @@ impl UI {
     fn draw_board(&self, board: &Board) {
         for y in 0..board.height() {
             for x in 0..board.width() {
-                let val = board.cell_value_at_board(x, y);
+                let val = board.at(x, y);
                 self.panel_2.mv(1 + y, 2 + 2 * x);
                 self.panel_2.printw(self.cell_string(&val));
             }
@@ -142,15 +144,15 @@ impl UI {
         self.panel_3.mvprintw(20, 21, format!("{:2}", self.fps_value));
     }
 
-    fn draw_active_block(&self, board: &Board) {
+    fn draw_active_block(&self, block: &Block) {
         for y in 0..4 {
             for x in 0..4 {
-                let val = board.cell_value_at_active_block(x, y);
+                let val = block.probe_value(x, y);
                 match val {
                     CellVal::Free => (),
                     CellVal::OutOfBoard => (),
                     _ => {
-                        let (px, py) = board.active_block_pos_to_board_pos(x, y);
+                        let (px, py) = block.pos_to_board_pos(x, y);
                         self.panel_2.mv(1 + py, 2 + 2 * px);
                         self.panel_2.printw("[]");
                     }
@@ -159,10 +161,10 @@ impl UI {
         }
     }
 
-    fn draw_next_block(&self, board: &Board) {
+    fn draw_next_block(&self, block: &Block) {
         for y in 0..3 {
             for x in 0..4 {
-                let val = board.cell_value_at_next_block(x, y);
+                let val = block.probe_value(x, y);
                 self.panel_3.mv(1 + y, 10 + 2 * x);
                 self.panel_3.printw(self.cell_string(&val));
             }

@@ -1,8 +1,6 @@
 mod curses_ui;
 
 use crate::curses_ui::{UiInput, UiState, UI};
-use rustris_core::board::Board;
-use rustris_core::common::Stats;
 use rustris_core::game::Game;
 use std::time::{Duration, Instant};
 
@@ -16,12 +14,9 @@ fn main() {
     return;
   }
 
-  // tests done, let's go
-  let mut board = Board::new(); // models
   let mut ui_state = UiState::new();
-  let mut stats = Stats::new();
-  let mut ui = ui_result.unwrap(); // view
-  let mut game = Game::new(); // controller
+  let mut ui = ui_result.unwrap();
+  let mut game = Game::new();
 
   loop {
     let t_start = Instant::now();
@@ -33,9 +28,9 @@ fn main() {
       _ => (),
     }
 
-    game.handle_input(&user_input, &mut board, &mut stats);
-    game.run_step(&mut board, &mut stats);
-    ui.draw(&board, &stats);
+    game.handle_input(&user_input);
+    game.run_step();
+    ui.draw(&game);
 
     while Instant::now() - t_start < FRAME_TIME {
       std::thread::sleep(SLEEP_TIME);

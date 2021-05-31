@@ -1,8 +1,6 @@
 extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 
-use rustris_core::board::Board;
-use rustris_core::common::{Stats, UserInput};
 use rustris_core::game::Game;
 use wasm_bindgen::prelude::*;
 
@@ -19,19 +17,13 @@ extern "C" {
 #[wasm_bindgen]
 pub struct RustrisGame {
     game: Game,
-    board: Board,
-    stats: Stats,
 }
 
 #[wasm_bindgen]
 impl RustrisGame {
     pub fn new() -> RustrisGame {
         console_error_panic_hook::set_once();
-        return RustrisGame {
-            game: Game::new(),
-            board: Board::new(),
-            stats: Stats::new(),
-        };
+        return RustrisGame { game: Game::new() };
     }
 
     pub fn print_info(&mut self) {
@@ -39,7 +31,7 @@ impl RustrisGame {
     }
 
     pub fn run_step(&mut self) -> bool {
-        self.game.run_step(&mut self.board, &mut self.stats);
+        self.game.run_step();
         return self.game.has_change();
     }
 }
