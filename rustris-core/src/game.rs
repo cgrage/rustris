@@ -5,7 +5,6 @@ use crate::common::{Stats, UserInput};
 pub struct Game {
     time: u32,
     step_interval: u32,
-    has_change: bool,
     pub board: Board,
     pub active_block: Block,
     pub next_block: Block,
@@ -17,7 +16,6 @@ impl Game {
         return Game {
             time: 0,
             step_interval: 10,
-            has_change: false,
             board: Board::new(),
             active_block: Block::rand(),
             next_block: Block::rand(),
@@ -30,12 +28,6 @@ impl Game {
         if self.time % self.step_interval == 0 {
             self.try_lower_block();
         }
-    }
-
-    pub fn has_change(&mut self) -> bool {
-        let val = self.has_change;
-        self.has_change = false;
-        return val;
     }
 
     pub fn handle_input(&mut self, input: &UserInput) {
@@ -56,8 +48,7 @@ impl Game {
         if self.board.collides(&self.active_block) {
             // if we collide: undo action
             self.active_block.move_horizontally(-amount);
-        } else {
-            self.has_change = true;
+            self.active_block.undo_changes(2);
         }
     }
 
@@ -66,8 +57,7 @@ impl Game {
         if self.board.collides(&self.active_block) {
             // if we collide: undo action
             self.active_block.rotate(-amount);
-        } else {
-            self.has_change = true;
+            self.active_block.undo_changes(2);
         }
     }
 
@@ -76,19 +66,22 @@ impl Game {
         if self.board.collides(&self.active_block) {
             // if we collide: undo action and FREEZE block
             self.active_block.move_vertically(-1);
+            self.active_block.undo_changes(2);
+
             self.freeze_block_and_have_next();
         }
-        self.has_change = true;
     }
 
     fn drop_block(&mut self) {
         while !self.board.collides(&self.active_block) {
             self.active_block.move_vertically(1);
         }
+
         self.active_block.move_vertically(-1);
+        self.active_block.undo_changes(2);
+
         // We don't do this right now..
         // self.freeze_block_and_have_next(board);
-        self.has_change = true;
     }
 
     fn freeze_block_and_have_next(&mut self) {

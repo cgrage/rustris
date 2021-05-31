@@ -6,6 +6,7 @@ pub struct Block {
     rotation: BlockRot,
     pos: (i32, i32),
     color: CellVal,
+    pub change_count: i32,
 }
 
 #[derive(Copy, Clone)]
@@ -48,6 +49,7 @@ impl Block {
             color: CellVal::Free,
             rotation: BlockRot::Rot0,
             pos: (0, 0),
+            change_count: 0,
         };
         block.replace_random();
         return block;
@@ -71,10 +73,12 @@ impl Block {
 
     pub fn move_horizontally(&mut self, x: i32) {
         self.pos = (self.pos.0 + x, self.pos.1);
+        self.change_count += 1;
     }
 
     pub fn move_vertically(&mut self, y: i32) {
         self.pos = (self.pos.0, self.pos.1 + y);
+        self.change_count += 1;
     }
 
     pub fn rotate(&mut self, r: i32) {
@@ -97,7 +101,7 @@ impl Block {
             }
             _ => panic!("rotate_block must be called w/ 1 or -1"),
         }
-        // self.has_change = true;
+        self.change_count += 1;
     }
 
     pub fn probe(&self, x: i32, y: i32) -> bool {
@@ -109,13 +113,19 @@ impl Block {
         self.color = other.color;
         self.rotation = BlockRot::Rot0;
         self.pos = (3, 0);
+        self.change_count += 1;
     }
 
-    pub fn replace_random(&mut self){
+    pub fn replace_random(&mut self) {
         self.block_type = BlockType::rand();
         self.color = CellVal::rand_color();
         self.rotation = BlockRot::Rot0;
         self.pos = (3, 0);
+        self.change_count += 1;
+    }
+
+    pub fn undo_changes(&mut self, count: i32) {
+        self.change_count -= count;
     }
 }
 

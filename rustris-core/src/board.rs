@@ -6,17 +6,20 @@ const BOARD_DIM_Y: usize = 20;
 
 pub struct Board {
     cells: [[CellVal; BOARD_DIM_X]; BOARD_DIM_Y],
+    pub change_count: i32,
 }
 
 impl Board {
     pub fn new() -> Board {
         return Board {
             cells: [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y],
+            change_count: 0,
         };
     }
 
     pub fn clear(&mut self) {
         self.cells = [[CellVal::Free; BOARD_DIM_X]; BOARD_DIM_Y];
+        self.change_count += 1;
     }
 
     pub fn width(&self) -> i32 {
@@ -37,6 +40,7 @@ impl Board {
 
     fn set_call_value(&mut self, x: i32, y: i32, value: &CellVal) {
         self.cells[y as usize][x as usize] = *value;
+        self.change_count += 1;
     }
 
     pub fn collides(&self, block: &Block) -> bool {
@@ -63,6 +67,7 @@ impl Board {
                 }
             }
         }
+        self.change_count += 1;
     }
 
     fn is_row_full(&self, row: i32) -> bool {
@@ -84,6 +89,7 @@ impl Board {
         for x in 0..self.width() {
             self.cells[0][x as usize] = CellVal::Free;
         }
+        self.change_count += 1;
     }
 
     pub fn clear_full_rows(&mut self) -> i32 {
@@ -94,6 +100,7 @@ impl Board {
                 count = count + 1;
             }
         }
+        self.change_count += 1;
         return count;
     }
 }

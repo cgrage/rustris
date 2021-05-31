@@ -31,7 +31,10 @@ impl RustrisGame {
     }
 
     pub fn run_step(&mut self) -> bool {
+        let chg1: i32 = self.game.active_block.change_count + self.game.board.change_count;
         self.game.run_step();
-        return self.game.has_change();
+        let chg2: i32 = self.game.active_block.change_count + self.game.board.change_count;
+
+        return chg1 != chg2;
     }
 }
