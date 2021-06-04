@@ -1,7 +1,6 @@
-use rustris_core::block::Block;
-use rustris_core::board::Board;
-use rustris_core::common::{CellVal, Stats, UserInput};
 use rustris_core::game::Game;
+use rustris_core::model::Tetromino;
+use rustris_core::model::{Board, CellVal, Stats, UserInput};
 use std::time::{Duration, Instant};
 
 const ONE_SECOND: Duration = Duration::from_secs(1);
@@ -114,10 +113,10 @@ impl UI {
             self.fps_time = now;
         }
 
-        self.draw_board(&game.board);
-        self.draw_active_block(&game.active_block);
-        self.draw_next_block(&game.next_block);
-        self.draw_stats(&game.stats);
+        self.draw_board(&game.current_board());
+        self.draw_active_piece(&game.active_piece());
+        self.draw_next_piece(&game.next_piece());
+        self.draw_stats(&game.stats());
 
         self.app_win.touch();
         self.app_win.refresh();
@@ -129,7 +128,7 @@ impl UI {
         for y in 0..board.height() {
             for x in 0..board.width() {
                 let val = board.at(x, y);
-                self.panel_2.mv(1 + y, 2 + 2 * x);
+                self.panel_2.mv(1 + y as i32, 2 + 2 * x as i32);
                 self.panel_2.printw(self.cell_string(&val));
             }
         }
@@ -144,15 +143,14 @@ impl UI {
         self.panel_3.mvprintw(20, 21, format!("{:2}", self.fps_value));
     }
 
-    fn draw_active_block(&self, block: &Block) {
+    fn draw_active_piece(&self, tetromino: &Tetromino) {
         for y in 0..4 {
             for x in 0..4 {
-                let val = block.probe_value(x, y);
-                match val {
+                match tetromino.at(x, y) {
                     CellVal::Free => (),
-                    CellVal::OutOfBoard => (),
                     _ => {
-                        let (px, py) = block.pos_to_board_pos(x, y);
+                        let px = tetromino.offset.0 + x;
+                        let py = tetromino.offset.1 + y;
                         self.panel_2.mv(1 + py, 2 + 2 * px);
                         self.panel_2.printw("[]");
                     }
@@ -161,11 +159,11 @@ impl UI {
         }
     }
 
-    fn draw_next_block(&self, block: &Block) {
+    fn draw_next_piece(&self, tetromino: &Tetromino) {
         for y in 0..3 {
             for x in 0..4 {
-                let val = block.probe_value(x, y);
-                self.panel_3.mv(1 + y, 10 + 2 * x);
+                let val = tetromino.at(x, y);
+                self.panel_3.mv(1 + y as i32, 10 + 2 * x as i32);
                 self.panel_3.printw(self.cell_string(&val));
             }
         }
@@ -184,7 +182,6 @@ impl UI {
             CellVal::Color7 => "{}",
             CellVal::Color8 => "{}",
             CellVal::Color9 => "{}",
-            CellVal::OutOfBoard => "??",
         };
     }
 
@@ -328,7 +325,7 @@ impl UI {
         };
         panel.mvaddstr(00, 0, "                       +");
         panel.mvaddstr(01, 0, " Next     ########      ");
-        panel.mvaddstr(02, 0, " Block:   ########      ");
+        panel.mvaddstr(02, 0, " Piece:   ########      ");
         panel.mvaddstr(03, 0, "          ########      ");
         panel.mvaddstr(04, 0, "                        ");
         panel.mvaddstr(05, 0, " Current Level: ####### ");

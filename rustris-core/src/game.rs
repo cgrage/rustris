@@ -1,14 +1,15 @@
-use crate::block::Block;
-use crate::board::Board;
-use crate::common::{Stats, UserInput};
+use crate::model::Tetromino;
+use crate::tetromino::TetrominoController;
+use crate::board::BoardController;
+use crate::model::{Board, Stats, UserInput};
 
 pub struct Game {
     time: u32,
     step_interval: u32,
-    pub board: Board,
-    pub active_block: Block,
-    pub next_block: Block,
-    pub stats: Stats,
+    board: BoardController,
+    active_piece: TetrominoController,
+    next_piece: TetrominoController,
+    stats: Stats,
 }
 
 impl Game {
@@ -16,9 +17,9 @@ impl Game {
         return Game {
             time: 0,
             step_interval: 10,
-            board: Board::new(),
-            active_block: Block::rand(),
-            next_block: Block::rand(),
+            board: BoardController::new(),
+            active_piece: TetrominoController::rand(),
+            next_piece: TetrominoController::rand(),
             stats: Stats::new(),
         };
     }
@@ -26,76 +27,75 @@ impl Game {
     pub fn run_step(&mut self) {
         self.time += 1;
         if self.time % self.step_interval == 0 {
-            self.try_lower_block();
+            self.try_lower_piece();
         }
     }
 
     pub fn handle_input(&mut self, input: &UserInput) {
         match input {
-            UserInput::MoveLeft => self.try_move_block_horizontally(-1),
-            UserInput::MoveRight => self.try_move_block_horizontally(1),
-            UserInput::MoveDown => self.try_lower_block(),
-            UserInput::DropDown => self.drop_block(),
-            UserInput::RotateLeft => self.try_rotate_block(-1),
-            UserInput::RotateRight => self.try_rotate_block(1),
+            UserInput::MoveLeft => self.try_move_piece_horizontally(-1),
+            UserInput::MoveRight => self.try_move_piece_horizontally(1),
+            UserInput::MoveDown => self.try_lower_piece(),
+            UserInput::DropDown => self.drop_piece(),
+            UserInput::RotateLeft => self.try_rotate_piece(-1),
+            UserInput::RotateRight => self.try_rotate_piece(1),
             UserInput::Reset => self.new_game(),
             UserInput::NoInput => (),
         };
     }
 
-    fn try_move_block_horizontally(&mut self, amount: i32) {
-        self.active_block.move_horizontally(amount);
-        if self.board.collides(&self.active_block) {
-            // if we collide: undo action
-            self.active_block.move_horizontally(-amount);
-            self.active_block.undo_changes(2);
+    pub fn current_board(&self) -> &Board {
+        return &self.board.board;
+    }
+
+    pub fn active_piece(&self) -> &Tetromino {
+        return &self.active_piece.tetromino;
+    }
+
+    pub fn next_piece(&self) -> &Tetromino {
+        return &self.next_piece.tetromino;
+    }
+
+    pub fn stats(&self) -> &Stats {
+        return &self.stats;
+    }
+
+    fn try_move_piece_horizontally(&mut self, amount: i32) {
+        self.active_piece.try_move_horizontally(amount, &self.board.board);
+    }
+
+    fn try_rotate_piece(&mut self, amount: i32) {
+        self.active_piece.try_rotate(amount, &self.board.board);
+    }
+
+    fn try_lower_piece(&mut self) {
+        if !self.active_piece.try_move_vertically(1, &self.board.board) {
+            self.freeze_piece_and_have_next();
         }
     }
 
-    fn try_rotate_block(&mut self, amount: i32) {
-        self.active_block.rotate(amount);
-        if self.board.collides(&self.active_block) {
-            // if we collide: undo action
-            self.active_block.rotate(-amount);
-            self.active_block.undo_changes(2);
+    fn drop_piece(&mut self) {
+        while self.active_piece.try_move_vertically(1, &self.board.board) {
+            //
         }
-    }
-
-    fn try_lower_block(&mut self) {
-        self.active_block.move_vertically(1);
-        if self.board.collides(&self.active_block) {
-            // if we collide: undo action and FREEZE block
-            self.active_block.move_vertically(-1);
-            self.active_block.undo_changes(2);
-
-            self.freeze_block_and_have_next();
-        }
-    }
-
-    fn drop_block(&mut self) {
-        while !self.board.collides(&self.active_block) {
-            self.active_block.move_vertically(1);
-        }
-
-        self.active_block.move_vertically(-1);
-        self.active_block.undo_changes(2);
 
         // We don't do this right now..
-        // self.freeze_block_and_have_next(board);
+        // self.freeze_piece_and_have_next(board);
     }
 
-    fn freeze_block_and_have_next(&mut self) {
-        self.board.freeze_block(&self.active_block);
+    fn freeze_piece_and_have_next(&mut self) {
+        self.board.freeze_tetromino(&self.active_piece.tetromino);
 
         let row_count = self.board.clear_full_rows();
         if row_count > 0 {
             self.on_rows_cleared(row_count);
         };
 
-        self.active_block.replace(&self.next_block);
-        self.next_block.replace_random();
-        if self.board.collides(&self.active_block) {
-            // our (just placed) new block already collides..
+        self.active_piece.update_by(&self.next_piece);
+        self.next_piece.set_random();
+
+        if self.active_piece.collides(&self.board.board) {
+            // our (just placed) new piece already collides..
             // player lost the game.
             self.new_game();
         }
@@ -103,8 +103,8 @@ impl Game {
 
     fn new_game(&mut self) {
         self.board.clear();
-        self.active_block.replace(&self.next_block);
-        self.next_block.replace_random();
+        self.active_piece.set_random();
+        self.next_piece.set_random();
         self.stats.reset();
     }
 
