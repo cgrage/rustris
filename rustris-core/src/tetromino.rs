@@ -23,8 +23,7 @@ enum TetrominoType {
 
 impl TetrominoType {
     pub fn rand() -> TetrominoType {
-        let mut rnd = rand::thread_rng();
-        return match rnd.gen_range(0, 7) {
+        return match rand::thread_rng().gen_range(0, 7) {
             0 => TetrominoType::I,
             1 => TetrominoType::O,
             2 => TetrominoType::T,
@@ -42,6 +41,17 @@ enum TetrominoRotation {
     Rot1,
     Rot2,
     Rot3,
+}
+
+impl TetrominoRotation {
+    pub fn rand() -> TetrominoRotation {
+        return match rand::thread_rng().gen_range(0, 4) {
+            0 => TetrominoRotation::Rot0,
+            1 => TetrominoRotation::Rot1,
+            2 => TetrominoRotation::Rot2,
+            _ => TetrominoRotation::Rot3,
+        };
+    }
 }
 
 impl TetrominoController {
@@ -116,7 +126,7 @@ impl TetrominoController {
     pub fn update_by(&mut self, other: &TetrominoController) {
         self.t_type = other.t_type;
         self.color = other.color;
-        self.rotation = TetrominoRotation::Rot0;
+        self.rotation = other.rotation;
         self.tetromino.offset = (3, 0);
 
         self.tetromino.inc_change_count();
@@ -126,7 +136,7 @@ impl TetrominoController {
     pub fn set_random(&mut self) {
         self.t_type = TetrominoType::rand();
         self.color = CellVal::rand_color();
-        self.rotation = TetrominoRotation::Rot0;
+        self.rotation = TetrominoRotation::rand();
         self.tetromino.offset = (3, 0);
 
         self.tetromino.inc_change_count();

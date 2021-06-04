@@ -117,8 +117,7 @@ pub enum CellVal {
 
 impl CellVal {
     pub fn rand_color() -> CellVal {
-        let mut rnd = rand::thread_rng();
-        return match rnd.gen_range(0, 8) {
+        return match rand::thread_rng().gen_range(0, 8) {
             0 => CellVal::Color1,
             1 => CellVal::Color2,
             2 => CellVal::Color3,

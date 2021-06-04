@@ -41,22 +41,12 @@ class Block {
             return; // no change
         }
 
-        this.color = color;
-        this.updateMesh();
-    }
-
-    removeMesh() {
         if (this.mesh) {
             scene.remove(this.mesh);
             this.mesh = null;
         }
-    }
 
-    updateMesh() {
-        if (this.mesh) {
-            this.removeMesh();
-        }
-
+        this.color = color;
         if (this.color == -1) {
             return;
         }
@@ -64,6 +54,15 @@ class Block {
         this.mesh = new THREE.Mesh(geometry, material[this.color]);
         this.mesh.position.set(this.x, this.y, 0);
         scene.add(this.mesh);
+    }
+
+    setPos(x, y) {
+        this.x = x;
+        this.y = y;
+
+        if (this.mesh) {
+            this.mesh.position.set(this.x, this.y, 0);
+        }
     }
 
     animate() {
@@ -76,11 +75,19 @@ class Block {
     }
 }
 
-var blocks = Array(20);
-for (let y = 0; y < blocks.length; y++) {
-    blocks[y] = Array(10);
-    for (let x = 0; x < blocks[y].length; x++) {
-        blocks[y][x] = new Block(x, y);
+var bgBlocks = Array(20);
+for (let y = 0; y < bgBlocks.length; y++) {
+    bgBlocks[y] = Array(10);
+    for (let x = 0; x < bgBlocks[y].length; x++) {
+        bgBlocks[y][x] = new Block(x, y);
+    }
+}
+
+var fgBlocks = Array(4);
+for (let y = 0; y < fgBlocks.length; y++) {
+    fgBlocks[y] = Array(4);
+    for (let x = 0; x < fgBlocks[y].length; x++) {
+        fgBlocks[y][x] = new Block(x, y);
     }
 }
 
@@ -91,13 +98,24 @@ const animate = function () {
         update = game.run_step();
     }
 
-    for (let y = 0; y < blocks.length; y++) {
-        for (let x = 0; x < blocks[y].length; x++) {
+    for (let y = 0; y < bgBlocks.length; y++) {
+        for (let x = 0; x < bgBlocks[y].length; x++) {
             if (update) {
-                blocks[y][x].setColor(game.board_color_at(x, y));
+                bgBlocks[y][x].setColor(game.board_color_at(x, y));
             }
 
-            blocks[y][x].animate();
+            bgBlocks[y][x].animate();
+        }
+    }
+
+    for (let y = 0; y < fgBlocks.length; y++) {
+        for (let x = 0; x < fgBlocks[y].length; x++) {
+            if (update) {
+                fgBlocks[y][x].setColor(game.active_piece_at(x, y));
+                fgBlocks[y][x].setPos(game.active_piece_x() + x, game.active_piece_y() + y);
+            }
+
+            fgBlocks[y][x].animate();
         }
     }
 

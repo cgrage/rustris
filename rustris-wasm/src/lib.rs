@@ -20,6 +20,20 @@ pub struct RustrisGame {
     game: Game,
 }
 
+fn to_js_color(color : &CellVal) -> i32 {
+    match color {
+        CellVal::Free => -1,
+        CellVal::Color1 => 1,
+        CellVal::Color2 => 2,
+        CellVal::Color3 => 3,
+        CellVal::Color4 => 4,
+        CellVal::Color5 => 5,
+        CellVal::Color6 => 6,
+        CellVal::Color7 => 7,
+        CellVal::Color8 => 8,
+    }
+}
+
 #[wasm_bindgen]
 impl RustrisGame {
     pub fn new() -> RustrisGame {
@@ -47,16 +61,22 @@ impl RustrisGame {
     }
 
     pub fn board_color_at(&self, x: i32, y: i32) -> i32 {
-        match self.game.current_board().at(x, y) {
-            CellVal::Free => -1,
-            CellVal::Color1 => 1,
-            CellVal::Color2 => 2,
-            CellVal::Color3 => 3,
-            CellVal::Color4 => 4,
-            CellVal::Color5 => 5,
-            CellVal::Color6 => 6,
-            CellVal::Color7 => 7,
-            CellVal::Color8 => 8,
-        }
+        return to_js_color(&self.game.current_board().at(x, y));
+    }
+
+    pub fn active_piece_at(&self, x: i32, y: i32) -> i32 {
+        return to_js_color(&self.game.active_piece().at(x, y));
+    }
+
+    pub fn active_piece_x(&self) -> i32 {
+        return self.game.active_piece().offset.0;
+    }
+
+    pub fn active_piece_y(&self) -> i32 {
+        return self.game.active_piece().offset.1;
+    }
+
+    pub fn next_piece_at(&self, x: i32, y: i32) -> i32 {
+        return to_js_color(&self.game.next_piece().at(x, y));
     }
 }

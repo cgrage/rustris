@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "cargo build",
+            "command": "cargo build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "wasm-pack",
+            "type": "shell",
+            "command": "wasm-pack build --target web",
+            "options": {
+                "cwd": "${workspaceFolder}/rustris-wasm"
+            },
+            "dependsOn": [
+                "cargo build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "serve",
+            "type": "shell",
+            "command": "python3 -m http.server --bind 127.0.0.1 --directory rustris-wasm 8080",
+            "dependsOn": [
+                "wasm-pack"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "browse",
+            "type": "shell",
+            "command": "firefox http://127.0.0.1:8080/rustris.html",
+            "problemMatcher": []
+        }
+    ]
+}
