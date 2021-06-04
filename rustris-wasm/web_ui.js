@@ -17,61 +17,89 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 var geometry = new THREE.BoxGeometry();
-var material = [
-    new THREE.MeshBasicMaterial({ color: getRandomColor() }),
-    new THREE.MeshBasicMaterial({ color: getRandomColor() }),
-    new THREE.MeshBasicMaterial({ color: getRandomColor() }),
-    new THREE.MeshBasicMaterial({ color: getRandomColor() }),
-    new THREE.MeshBasicMaterial({ color: getRandomColor() })
-];
+var material = {
+    1: new THREE.MeshBasicMaterial({ color: '#CCCCCC' }),
+    2: new THREE.MeshBasicMaterial({ color: '#BBBBBB' }),
+    3: new THREE.MeshBasicMaterial({ color: '#AAAAAA' }),
+    4: new THREE.MeshBasicMaterial({ color: '#999999' }),
+    5: new THREE.MeshBasicMaterial({ color: '#888888' }),
+    6: new THREE.MeshBasicMaterial({ color: '#777777' }),
+    7: new THREE.MeshBasicMaterial({ color: '#666666' }),
+    8: new THREE.MeshBasicMaterial({ color: '#555555' })
+};
 
-function rndMat() {
-    return material[Math.floor(Math.random() * material.length)];
-}
-
-function getRandomColor() {
-    var letters = '0123456789ABCDEF';
-    var color = '#';
-    for (var i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
+class Block {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.mesh = null;
+        this.color = -1;
     }
-    return color;
+
+    setColor(color) {
+        if (color == this.color) {
+            return; // no change
+        }
+
+        this.color = color;
+        this.updateMesh();
+    }
+
+    removeMesh() {
+        if (this.mesh) {
+            scene.remove(this.mesh);
+            this.mesh = null;
+        }
+    }
+
+    updateMesh() {
+        if (this.mesh) {
+            this.removeMesh();
+        }
+
+        if (this.color == -1) {
+            return;
+        }
+
+        this.mesh = new THREE.Mesh(geometry, material[this.color]);
+        this.mesh.position.set(this.x, this.y, 0);
+        scene.add(this.mesh);
+    }
+
+    animate() {
+        if (!this.mesh) {
+            return;
+        }
+
+        this.mesh.rotation.x += 0.01;
+        this.mesh.rotation.y += 0.01;
+    }
 }
 
-var blocks = null;
+var blocks = Array(20);
+for (let y = 0; y < blocks.length; y++) {
+    blocks[y] = Array(10);
+    for (let x = 0; x < blocks[y].length; x++) {
+        blocks[y][x] = new Block(x, y);
+    }
+}
 
 const animate = function () {
     requestAnimationFrame(animate);
-    let redraw = false;
+    let update = false;
     if (game) {
-        redraw = game.run_step();
+        update = game.run_step();
     }
 
-    if (redraw) {
-        if (blocks) {
-            for (let y = 0; y < blocks.length; y++) {
-                for (let x = 0; x < blocks[y].length; x++) {
-                    scene.remove(blocks[y][x]);
-                }
+    for (let y = 0; y < blocks.length; y++) {
+        for (let x = 0; x < blocks[y].length; x++) {
+            if (update) {
+                blocks[y][x].setColor(game.board_color_at(x, y));
             }
-        } else {
-            blocks = Array(20);
-            for (let y = 0; y < blocks.length; y++) {
-                blocks[y] = Array(10);
-            }
-        }
 
-        for (let y = 0; y < blocks.length; y++) {
-            for (let x = 0; x < blocks[y].length; x++) {
-                blocks[y][x] = new THREE.Mesh(geometry, rndMat());
-                blocks[y][x].position.set(x, y, 0);
-                scene.add(blocks[y][x]);
-            }
+            blocks[y][x].animate();
         }
     }
-
-    // cube.rotation.x += 0.01;
-    // cube.rotation.y += 0.01;
 
     renderer.render(scene, camera);
 };

@@ -105,7 +105,6 @@ impl Stats {
 #[derive(Copy, Clone)]
 pub enum CellVal {
     Free,
-    Color0,
     Color1,
     Color2,
     Color3,
@@ -114,23 +113,20 @@ pub enum CellVal {
     Color6,
     Color7,
     Color8,
-    Color9,
 }
 
 impl CellVal {
     pub fn rand_color() -> CellVal {
         let mut rnd = rand::thread_rng();
-        return match rnd.gen_range(0, 10) {
-            0 => CellVal::Color0,
-            1 => CellVal::Color1,
-            2 => CellVal::Color2,
-            3 => CellVal::Color3,
-            4 => CellVal::Color4,
-            5 => CellVal::Color5,
-            6 => CellVal::Color6,
-            7 => CellVal::Color7,
-            8 => CellVal::Color8,
-            _ => CellVal::Color9,
+        return match rnd.gen_range(0, 8) {
+            0 => CellVal::Color1,
+            1 => CellVal::Color2,
+            2 => CellVal::Color3,
+            3 => CellVal::Color4,
+            4 => CellVal::Color5,
+            5 => CellVal::Color6,
+            6 => CellVal::Color7,
+            _ => CellVal::Color8,
         };
     }
 }

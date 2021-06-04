@@ -172,7 +172,6 @@ impl UI {
     fn cell_string(&self, val: &CellVal) -> &str {
         return match val {
             CellVal::Free => "  ",
-            CellVal::Color0 => "{}",
             CellVal::Color1 => "{}",
             CellVal::Color2 => "{}",
             CellVal::Color3 => "{}",
@@ -181,7 +180,6 @@ impl UI {
             CellVal::Color6 => "{}",
             CellVal::Color7 => "{}",
             CellVal::Color8 => "{}",
-            CellVal::Color9 => "{}",
         };
     }
 
