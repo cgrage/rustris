@@ -2,7 +2,7 @@ extern crate console_error_panic_hook;
 extern crate wasm_bindgen;
 
 use rustris_core::game::Game;
-use rustris_core::model::CellVal;
+use rustris_core::model::{CellVal, UserInput};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -16,11 +16,11 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub struct RustrisGame {
+pub struct WasmAPI {
     game: Game,
 }
 
-fn to_js_color(color : &CellVal) -> i32 {
+fn to_js_color(color: &CellVal) -> i32 {
     match color {
         CellVal::Free => -1,
         CellVal::Color1 => 1,
@@ -35,14 +35,14 @@ fn to_js_color(color : &CellVal) -> i32 {
 }
 
 #[wasm_bindgen]
-impl RustrisGame {
-    pub fn new() -> RustrisGame {
+impl WasmAPI {
+    pub fn new() -> WasmAPI {
         console_error_panic_hook::set_once();
-        return RustrisGame { game: Game::new() };
+        return WasmAPI { game: Game::new() };
     }
 
     pub fn print_info(&mut self) {
-        log("RustrisGame");
+        log("WasmAPI");
     }
 
     pub fn run_step(&mut self) -> bool {
@@ -78,5 +78,29 @@ impl RustrisGame {
 
     pub fn next_piece_at(&self, x: i32, y: i32) -> i32 {
         return to_js_color(&self.game.next_piece().at(x, y));
+    }
+
+    pub fn move_left(&mut self) {
+        self.game.handle_input(&UserInput::MoveLeft);
+    }
+
+    pub fn move_right(&mut self) {
+        self.game.handle_input(&UserInput::MoveRight);
+    }
+
+    pub fn drop_down(&mut self) {
+        self.game.handle_input(&UserInput::DropDown);
+    }
+
+    pub fn move_down(&mut self) {
+        self.game.handle_input(&UserInput::MoveDown);
+    }
+
+    pub fn rotate_left(&mut self) {
+        self.game.handle_input(&UserInput::RotateLeft);
+    }
+
+    pub fn rotate_right(&mut self) {
+        self.game.handle_input(&UserInput::RotateRight);
     }
 }

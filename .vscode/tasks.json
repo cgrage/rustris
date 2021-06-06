@@ -5,10 +5,6 @@
             "type": "shell",
             "label": "cargo build",
             "command": "cargo build",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
         },
         {
             "label": "wasm-pack",
@@ -20,7 +16,11 @@
             "dependsOn": [
                 "cargo build"
             ],
-            "problemMatcher": []
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "serve",
@@ -29,13 +29,13 @@
             "dependsOn": [
                 "wasm-pack"
             ],
-            "problemMatcher": []
+            "problemMatcher": [],
         },
         {
             "label": "browse",
             "type": "shell",
             "command": "firefox http://127.0.0.1:8080/rustris.html",
-            "problemMatcher": []
+            "problemMatcher": [],
         }
     ]
 }

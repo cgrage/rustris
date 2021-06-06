@@ -1,20 +1,22 @@
-var game = null;
+var api = null;
 
-import init, { RustrisGame } from "./pkg/rustris_wasm.js";
+import init, { WasmAPI } from "./pkg/rustris_wasm.js";
 init()
     .then(() => {
-        game = RustrisGame.new();
-        game.print_info();
+        api = WasmAPI.new();
+        api.print_info();
     });
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(5, 10, 15);
-camera.lookAt(5, 10, 0);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+document.addEventListener("keydown", onDocumentKeyDown, false);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+camera.position.set(5, 10, -25);
+camera.lookAt(5, 10, 0);
+camera.rotateZ(Math.PI);
 
 var geometry = new THREE.BoxGeometry();
 var material = {
@@ -27,6 +29,23 @@ var material = {
     7: new THREE.MeshBasicMaterial({ color: '#666666' }),
     8: new THREE.MeshBasicMaterial({ color: '#555555' })
 };
+
+function onDocumentKeyDown(event) {
+    switch (event.code) {
+        case "KeyA": api.move_left(); break;
+        case "KeyD": api.move_right(); break;
+        case "KeyW": api.drop_down(); break;
+        case "KeyQ": api.rotate_left(); break;
+        case "KeyE": api.rotate_right(); break;
+        case "ControlLeft":
+        case "Space":
+            api.move_down();
+            break;
+        default:
+            // console.log("keydown code=" + event.code);
+            break;
+    }
+}
 
 class Block {
     constructor(x, y) {
@@ -91,28 +110,31 @@ for (let y = 0; y < fgBlocks.length; y++) {
     }
 }
 
-const animate = function () {
-    requestAnimationFrame(animate);
-    let update = false;
-    if (game) {
-        update = game.run_step();
+const gameLoop = function () {
+    requestAnimationFrame(gameLoop);
+    if (!api) {
+        return; // wait for wasm to be initialized
     }
+
+    let needUpdate = api.run_step();
 
     for (let y = 0; y < bgBlocks.length; y++) {
         for (let x = 0; x < bgBlocks[y].length; x++) {
-            if (update) {
-                bgBlocks[y][x].setColor(game.board_color_at(x, y));
+            if (needUpdate) {
+                bgBlocks[y][x].setColor(api.board_color_at(x, y));
             }
 
             bgBlocks[y][x].animate();
         }
     }
 
+    let xOff = api.active_piece_x();
+    let yOff = api.active_piece_y()
     for (let y = 0; y < fgBlocks.length; y++) {
         for (let x = 0; x < fgBlocks[y].length; x++) {
-            if (update) {
-                fgBlocks[y][x].setColor(game.active_piece_at(x, y));
-                fgBlocks[y][x].setPos(game.active_piece_x() + x, game.active_piece_y() + y);
+            if (needUpdate) {
+                fgBlocks[y][x].setColor(api.active_piece_at(x, y));
+                fgBlocks[y][x].setPos(xOff + x, yOff + y);
             }
 
             fgBlocks[y][x].animate();
@@ -122,4 +144,4 @@ const animate = function () {
     renderer.render(scene, camera);
 };
 
-requestAnimationFrame(animate);
+requestAnimationFrame(gameLoop);
